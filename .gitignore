@@ -1,0 +1,251 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+.ENV/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static/
+/static/
+/media/
+
+# Django migrations (uncomment if you want to ignore them)
+# */migrations/*.py
+# !*/migrations/__init__.py
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Redis dump files
+dump.rdb
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+ios/Flutter/flutter_assets/
+ios/Flutter/flutter_export_environment.sh
+android/app/src/main/java/io/flutter/plugins/
+ios/Runner/GeneratedPluginRegistrant.*
+android/app/src/main/kotlin/**/generated_plugin_registrant.kt
+.flutter-plugins-dependencies
+
+# IDE files
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Temporary files
+temp/
+tmp/
+.temp/
+.tmp/
+
+# Coverage reports
+coverage/
+*.lcov
+.coverage
+htmlcov/
+
+# Local development
+local/
+.local/
+
+# Secrets and keys
+*.pem
+*.key
+*.p12
+*.crt
+
+# Redis
+dump.rdb
+
+# PostgreSQL
+*.sql.gz
+*.backup
+
+# Archives
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# Node.js (if any remaining frontend tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+out/
+
+# Monitoring and profiling
+.prof
+
+# Local SSL certificates
+ssl/
+certs/ 
+
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
