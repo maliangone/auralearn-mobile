@@ -24,7 +24,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final authResponse = await remoteDataSource.login(request);
       await localDataSource.saveAuthData(authResponse);
       return Right(_userModelToEntity(authResponse.user));
-    } on DioException catch (e) {
+    } on DioError catch (e) {
       return Left(_handleDioException(e));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
@@ -37,7 +37,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final authResponse = await remoteDataSource.register(request);
       await localDataSource.saveAuthData(authResponse);
       return Right(_userModelToEntity(authResponse.user));
-    } on DioException catch (e) {
+    } on DioError catch (e) {
       return Left(_handleDioException(e));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
@@ -50,7 +50,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await remoteDataSource.logout();
       await localDataSource.clearAuthData();
       return const Right(null);
-    } on DioException catch (e) {
+    } on DioError catch (e) {
       // Even if remote logout fails, clear local data
       await localDataSource.clearAuthData();
       return Left(_handleDioException(e));
@@ -71,7 +71,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final authResponse = await remoteDataSource.refreshToken(refreshToken);
       await localDataSource.saveAuthData(authResponse);
       return Right(_userModelToEntity(authResponse.user));
-    } on DioException catch (e) {
+    } on DioError catch (e) {
       if (e.response?.statusCode == 401) {
         // Refresh token is invalid, clear auth data
         await localDataSource.clearAuthData();
@@ -122,13 +122,13 @@ class AuthRepositoryImpl implements AuthRepository {
     );
   }
 
-  Failure _handleDioException(DioException e) {
+  Failure _handleDioException(DioError e) {
     switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
+      case DioErrorType.connectTimeout:
+      case DioErrorType.sendTimeout:
+      case DioErrorType.receiveTimeout:
         return const NetworkFailure('Connection timeout');
-      case DioExceptionType.badResponse:
+      case DioErrorType.response:
         final statusCode = e.response?.statusCode;
         final message = e.response?.data?['message'] ?? 'Server error';
         
@@ -139,12 +139,12 @@ class AuthRepositoryImpl implements AuthRepository {
         } else {
           return ServerFailure(message, code: statusCode);
         }
-      case DioExceptionType.cancel:
+      case DioErrorType.cancel:
         return const NetworkFailure('Request cancelled');
-      case DioExceptionType.connectionError:
+      case DioErrorType.connectionError:
         return const NetworkFailure('No internet connection');
       default:
-        return UnknownFailure(e.message ?? 'Unknown error');
+        return UnknownFailure(e.message);
     }
   }
 } 

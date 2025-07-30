@@ -78,9 +78,9 @@ Future<void> setupDependencies() async {
 Dio _createDio() {
   final dio = Dio(BaseOptions(
     baseUrl: AppConfig.baseUrl,
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 30),
-    sendTimeout: const Duration(seconds: 30),
+    connectTimeout: 30000, // 30 seconds in milliseconds
+    receiveTimeout: 30000, // 30 seconds in milliseconds
+    sendTimeout: 30000, // 30 seconds in milliseconds
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -167,7 +167,6 @@ void _setupQuestionDependencies() {
   getIt.registerFactory<QuestionBloc>(
     () => QuestionBloc(
       submitQuestionUseCase: getIt<SubmitQuestionUseCase>(),
-      uploadImagesUseCase: getIt<UploadImagesUseCase>(),
     ),
   );
 }
