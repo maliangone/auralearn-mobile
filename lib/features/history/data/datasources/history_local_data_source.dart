@@ -16,7 +16,7 @@ class HistoryLocalDataSourceImpl implements HistoryLocalDataSource {
   @override
   Future<void> cacheHistory(List<HistoryItemModel> items) async {
     try {
-      final box = await Hive.openBox<Map>(boxName);
+      final box = await Hive.openBox(boxName);
       final itemsJson = items.map((item) => item.toJson()).toList();
       await box.put(historyKey, itemsJson);
     } catch (e) {
@@ -27,8 +27,8 @@ class HistoryLocalDataSourceImpl implements HistoryLocalDataSource {
   @override
   Future<List<HistoryItemModel>> getCachedHistory() async {
     try {
-      final box = await Hive.openBox<Map>(boxName);
-      final cachedData = box.get(historyKey, defaultValue: <Map>[]);
+      final box = await Hive.openBox(boxName);
+      final cachedData = box.get(historyKey, defaultValue: []);
       
       if (cachedData is List) {
         return cachedData
@@ -45,7 +45,7 @@ class HistoryLocalDataSourceImpl implements HistoryLocalDataSource {
   @override
   Future<void> clearCache() async {
     try {
-      final box = await Hive.openBox<Map>(boxName);
+      final box = await Hive.openBox(boxName);
       await box.clear();
     } catch (e) {
       // Handle cache errors gracefully

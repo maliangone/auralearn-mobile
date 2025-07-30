@@ -31,7 +31,7 @@ class AuthInterceptor extends Interceptor {
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
+  void onError(DioError err, ErrorInterceptorHandler handler) {
     AppLogger.error('API Error: ${err.message}', err);
 
     // Handle 401 Unauthorized - token might be expired

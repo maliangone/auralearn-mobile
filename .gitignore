@@ -1,3 +1,6 @@
+# 
+
+
 # Virtual environments
 venv/
 env/
@@ -25,12 +28,39 @@ ENV/
 .pub-cache/
 .pub/
 build/
+
+# iOS build artifacts
+ios/.generated/
+ios/Flutter/Flutter.framework/
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/app.zip
 ios/Flutter/flutter_assets/
 ios/Flutter/flutter_export_environment.sh
-android/app/src/main/java/io/flutter/plugins/
-ios/Runner/GeneratedPluginRegistrant.*
-android/app/src/main/kotlin/**/generated_plugin_registrant.kt
-.flutter-plugins-dependencies
+ios/Flutter/App.framework/
+ios/Flutter/Flutter.framework/
+
+# Android build artifacts  
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/app/build/
+android/app/outputs/
+android/app/intermediates/
+android/app/generated/
+android/.gradle/
+android/gradle/
+android/gradlew/
+android/gradlew.bat
+android/local.properties
+android/captures/
+android/external-native-build/
+
+# Generated files
+**/generated_plugin_registrant.*
+**/GeneratedPluginRegistrant.*
+**/flutter_export_environment.sh
 
 # IDE files
 *.swp
@@ -160,3 +190,47 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Additional Flutter platform build artifacts
+macos/Flutter/Generated.xcconfig
+macos/Flutter/Flutter.framework/
+macos/Flutter/Flutter.podspec
+linux/flutter/ephemeral/
+linux/flutter/generated_plugins.cmake
+windows/flutter/ephemeral/
+windows/flutter/generated_plugins.cmake
+
+# Build outputs
+*.apk
+*.aab
+*.ipa
+*.app
+
+# Gradle cache and wrapper
+.gradle/
+gradle-wrapper.jar
+
+# IDE project files (additional patterns)
+*.xcworkspace
+*.xcodeproj
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+*.xcscmblueprint
+
+# Xcode specific
+DerivedData/
+*.hmap
+*.xcuserstate
+
+# Android specific build files
+*.jks
+*.keystore
+secrets.properties
+key.properties
+
+# Test coverage
+coverage/
+*.lcov

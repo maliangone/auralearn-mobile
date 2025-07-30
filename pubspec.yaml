@@ -29,9 +29,9 @@ dependencies:
 
   # HTTP & API
   http: ^1.1.0
-  dio: ^5.3.3
+  dio: ^4.0.0
   dio_logging_interceptor: ^1.0.1
-  retrofit: ^4.0.3
+  retrofit: ^3.3.1
   json_annotation: ^4.8.1
 
   # State Management
@@ -76,7 +76,7 @@ dev_dependencies:
 
   # Code Generation
   build_runner: ^2.4.7
-  retrofit_generator: ^8.0.6
+  retrofit_generator: ^4.2.0
   json_serializable: ^6.7.1
   hive_generator: ^2.0.1
 

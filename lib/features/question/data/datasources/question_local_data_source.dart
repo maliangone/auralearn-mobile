@@ -15,7 +15,7 @@ class QuestionLocalDataSourceImpl implements QuestionLocalDataSource {
   @override
   Future<void> cacheQuestionResponse(QuestionResponseModel questionResponse) async {
     try {
-      final box = await Hive.openBox<Map>(boxName);
+      final box = await Hive.openBox(boxName);
       await box.put(lastQuestionKey, questionResponse.toJson());
       
       // Also add to cached questions list
@@ -36,7 +36,7 @@ class QuestionLocalDataSourceImpl implements QuestionLocalDataSource {
   @override
   Future<QuestionResponseModel?> getLastQuestionResponse() async {
     try {
-      final box = await Hive.openBox<Map>(boxName);
+      final box = await Hive.openBox(boxName);
       final questionJson = box.get(lastQuestionKey);
       
       if (questionJson != null) {
@@ -52,8 +52,8 @@ class QuestionLocalDataSourceImpl implements QuestionLocalDataSource {
   @override
   Future<List<QuestionResponseModel>> getCachedQuestions() async {
     try {
-      final box = await Hive.openBox<Map>(boxName);
-      final questionsJson = box.get('questions_list', defaultValue: <Map>[]);
+      final box = await Hive.openBox(boxName);
+      final questionsJson = box.get('questions_list', defaultValue: []);
       
       if (questionsJson is List) {
         return questionsJson
@@ -70,7 +70,7 @@ class QuestionLocalDataSourceImpl implements QuestionLocalDataSource {
   @override
   Future<void> clearCache() async {
     try {
-      final box = await Hive.openBox<Map>(boxName);
+      final box = await Hive.openBox(boxName);
       await box.clear();
     } catch (e) {
       // Handle cache errors gracefully

@@ -5,7 +5,7 @@ import '../../features/auth/data/models/login_request.dart';
 import '../../features/auth/data/models/register_request.dart';
 import '../../features/auth/data/models/auth_response.dart';
 import '../../features/question/data/models/question_request.dart';
-import '../../features/question/data/models/question_response.dart';
+import '../../features/question/domain/entities/question_response.dart';
 import '../../features/history/data/models/history_response.dart';
 import '../../features/subscription/data/models/subscription_response.dart';
 

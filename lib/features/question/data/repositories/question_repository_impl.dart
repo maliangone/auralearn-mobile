@@ -44,10 +44,10 @@ class QuestionRepositoryImpl implements QuestionRepository {
       await localDataSource.cacheQuestionResponse(questionResponse);
       
       return Right(questionResponse.toEntity());
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout ||
-          e.type == DioExceptionType.connectionError) {
+    } on DioError catch (e) {
+      if (e.type == DioErrorType.connectTimeout ||
+          e.type == DioErrorType.receiveTimeout ||
+          e.type == DioErrorType.sendTimeout) {
         return const Left(NetworkFailure('Network connection failed'));
       } else if (e.response?.statusCode == 401) {
         return const Left(AuthFailure('Authentication required'));
@@ -85,10 +85,10 @@ class QuestionRepositoryImpl implements QuestionRepository {
     try {
       await remoteDataSource.deleteQuestion(questionId);
       return const Right(null);
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout ||
-          e.type == DioExceptionType.connectionError) {
+    } on DioError catch (e) {
+      if (e.type == DioErrorType.connectTimeout ||
+          e.type == DioErrorType.receiveTimeout ||
+          e.type == DioErrorType.sendTimeout) {
         return const Left(NetworkFailure('Network connection failed'));
       } else if (e.response?.statusCode == 401) {
         return const Left(AuthFailure('Authentication required'));
@@ -107,10 +107,10 @@ class QuestionRepositoryImpl implements QuestionRepository {
     try {
       final response = await remoteDataSource.uploadImages(images);
       return Right(response);
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout ||
-          e.type == DioExceptionType.connectionError) {
+    } on DioError catch (e) {
+      if (e.type == DioErrorType.connectTimeout ||
+          e.type == DioErrorType.receiveTimeout ||
+          e.type == DioErrorType.sendTimeout) {
         return const Left(NetworkFailure('Network connection failed'));
       } else if (e.response?.statusCode == 401) {
         return const Left(AuthFailure('Authentication required'));

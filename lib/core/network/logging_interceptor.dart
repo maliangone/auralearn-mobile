@@ -44,7 +44,7 @@ class LoggingInterceptor extends Interceptor {
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
+  void onError(DioError err, ErrorInterceptorHandler handler) {
     final method = err.requestOptions.method.toUpperCase();
     final uri = err.requestOptions.uri.toString();
     final statusCode = err.response?.statusCode;

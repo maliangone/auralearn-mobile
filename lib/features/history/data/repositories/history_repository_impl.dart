@@ -35,11 +35,11 @@ class HistoryRepositoryImpl implements HistoryRepository {
       }
       
       return Right(response.items.map((item) => item.toEntity()).toList());
-    } on DioException catch (e) {
+    } on DioError catch (e) {
       // Try to get cached data on network error
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout ||
-          e.type == DioExceptionType.connectionError) {
+      if (e.type == DioErrorType.connectTimeout ||
+          e.type == DioErrorType.receiveTimeout ||
+          e.type == DioErrorType.sendTimeout) {
         
         if (page == 1) {
           final cachedItems = await localDataSource.getCachedHistory();
@@ -69,10 +69,10 @@ class HistoryRepositoryImpl implements HistoryRepository {
       await localDataSource.removeCachedHistoryItem(itemId);
       
       return const Right(null);
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout ||
-          e.type == DioExceptionType.connectionError) {
+    } on DioError catch (e) {
+      if (e.type == DioErrorType.connectTimeout ||
+          e.type == DioErrorType.receiveTimeout ||
+          e.type == DioErrorType.sendTimeout) {
         return const Left(NetworkFailure('Network connection failed'));
       } else if (e.response?.statusCode == 401) {
         return const Left(AuthFailure('Authentication required'));
@@ -94,10 +94,10 @@ class HistoryRepositoryImpl implements HistoryRepository {
       await localDataSource.clearCache();
       
       return const Right(null);
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout ||
-          e.type == DioExceptionType.connectionError) {
+    } on DioError catch (e) {
+      if (e.type == DioErrorType.connectTimeout ||
+          e.type == DioErrorType.receiveTimeout ||
+          e.type == DioErrorType.sendTimeout) {
         return const Left(NetworkFailure('Network connection failed'));
       } else if (e.response?.statusCode == 401) {
         return const Left(AuthFailure('Authentication required'));

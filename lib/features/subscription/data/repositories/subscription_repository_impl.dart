@@ -28,7 +28,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         'subscription': _subscriptionModelToEntity(response.subscription),
         'usageStats': response.usageStats,
       });
-    } on DioException catch (e) {
+    } on DioError catch (e) {
       return Left(_handleDioException(e));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
@@ -47,7 +47,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
       await localDataSource.cacheSubscriptionData(response);
       
       return Right(_subscriptionModelToEntity(response.subscription));
-    } on DioException catch (e) {
+    } on DioError catch (e) {
       return Left(_handleDioException(e));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
@@ -59,7 +59,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     try {
       await remoteDataSource.cancelSubscription();
       return const Right(null);
-    } on DioException catch (e) {
+    } on DioError catch (e) {
       return Left(_handleDioException(e));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
@@ -71,7 +71,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     try {
       final response = await remoteDataSource.restoreSubscription();
       return Right(_subscriptionModelToEntity(response.subscription));
-    } on DioException catch (e) {
+    } on DioError catch (e) {
       return Left(_handleDioException(e));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
@@ -83,7 +83,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     try {
       final usageStats = await remoteDataSource.getUsageStats();
       return Right(usageStats);
-    } on DioException catch (e) {
+    } on DioError catch (e) {
       return Left(_handleDioException(e));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
@@ -107,13 +107,13 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     );
   }
 
-  Failure _handleDioException(DioException e) {
+  Failure _handleDioException(DioError e) {
     switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
+      case DioErrorType.connectTimeout:
+      case DioErrorType.sendTimeout:
+      case DioErrorType.receiveTimeout:
         return const NetworkFailure('Connection timeout');
-      case DioExceptionType.badResponse:
+      case DioErrorType.response:
         final statusCode = e.response?.statusCode;
         final message = e.response?.data?['message'] ?? 'Server error';
         
@@ -124,12 +124,12 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         } else {
           return ServerFailure(message, code: statusCode);
         }
-      case DioExceptionType.cancel:
+      case DioErrorType.cancel:
         return const NetworkFailure('Request cancelled');
-      case DioExceptionType.connectionError:
+      case DioErrorType.connectionError:
         return const NetworkFailure('No internet connection');
       default:
-        return UnknownFailure(e.message ?? 'Unknown error');
+        return UnknownFailure(e.message);
     }
   }
 } 

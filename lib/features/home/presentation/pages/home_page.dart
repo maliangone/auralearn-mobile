@@ -5,7 +5,9 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../subscription/presentation/bloc/subscription_bloc.dart';
+import '../../../subscription/presentation/bloc/subscription_event.dart';
 import '../widgets/usage_indicator.dart';
 import '../widgets/quick_action_card.dart';
 import '../widgets/recent_question_card.dart';
