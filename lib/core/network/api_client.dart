@@ -5,7 +5,7 @@ import '../../features/auth/data/models/login_request.dart';
 import '../../features/auth/data/models/register_request.dart';
 import '../../features/auth/data/models/auth_response.dart';
 import '../../features/question/data/models/question_request.dart';
-import '../../features/question/domain/entities/question_response.dart';
+import '../../features/question/data/models/question_response.dart';
 import '../../features/history/data/models/history_response.dart';
 import '../../features/subscription/data/models/subscription_response.dart';
 
@@ -26,18 +26,19 @@ abstract class ApiClient {
   Future<void> logout();
 
   @POST('/auth/refresh')
-  Future<AuthResponse> refreshToken(@Field('refresh_token') String refreshToken);
+  Future<AuthResponse> refreshToken(
+      @Field('refresh_token') String refreshToken);
 
   @GET('/auth/profile')
   Future<AuthResponse> getProfile();
 
   // Question endpoints
   @POST('/questions/submit')
-  Future<QuestionResponse> submitQuestion(@Body() QuestionRequest request);
+  Future<QuestionResponseModel> submitQuestion(@Body() QuestionRequest request);
 
   @POST('/questions/upload-images')
   @MultiPart()
-  Future<Map<String, dynamic>> uploadImages(@Part() List<MultipartFile> images);
+  Future<dynamic> uploadImages(@Part() List<MultipartFile> images);
 
   // History endpoints
   @GET('/history')
@@ -63,5 +64,5 @@ abstract class ApiClient {
   );
 
   @GET('/subscription/usage')
-  Future<Map<String, dynamic>> getUsageStats();
-} 
+  Future<dynamic> getUsageStats();
+}

@@ -23,7 +23,7 @@ class AppRouter {
         name: 'onboarding',
         builder: (context, state) => const OnboardingPage(),
       ),
-      
+
       // Auth routes
       GoRoute(
         path: '/login',
@@ -35,7 +35,7 @@ class AppRouter {
         name: 'register',
         builder: (context, state) => const RegisterPage(),
       ),
-      
+
       // Main shell with bottom navigation
       ShellRoute(
         builder: (context, state, child) {
@@ -53,7 +53,7 @@ class AppRouter {
             builder: (context, state) => const HistoryPage(),
             routes: [
               GoRoute(
-                path: '/detail/:id',
+                path: 'detail/:id',
                 name: 'history-detail',
                 builder: (context, state) {
                   final id = state.pathParameters['id']!;
@@ -74,7 +74,7 @@ class AppRouter {
           ),
         ],
       ),
-      
+
       // Question flow routes (fullscreen)
       GoRoute(
         path: '/question',
@@ -101,7 +101,7 @@ class AppRouter {
 
 class MainShell extends StatefulWidget {
   final Widget child;
-  
+
   const MainShell({super.key, required this.child});
 
   @override
@@ -142,10 +142,12 @@ class _MainShellState extends State<MainShell> {
           ),
         ],
       ),
-      floatingActionButton: _currentIndex == 0 ? FloatingActionButton(
-        onPressed: () => context.go('/question'),
-        child: const Icon(Icons.add),
-      ) : null,
+      floatingActionButton: _currentIndex == 0
+          ? FloatingActionButton(
+              onPressed: () => context.go('/question'),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
@@ -173,7 +175,7 @@ class _MainShellState extends State<MainShell> {
 
 class ErrorPage extends StatelessWidget {
   final String error;
-  
+
   const ErrorPage({super.key, required this.error});
 
   @override
@@ -212,4 +214,4 @@ class ErrorPage extends StatelessWidget {
       ),
     );
   }
-} 
+}

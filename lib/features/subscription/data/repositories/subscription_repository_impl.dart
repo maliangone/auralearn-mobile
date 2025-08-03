@@ -20,10 +20,10 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
   Future<Either<Failure, Map<String, dynamic>>> getSubscriptionStatus() async {
     try {
       final response = await remoteDataSource.getSubscriptionStatus();
-      
+
       // Cache subscription data locally
       await localDataSource.cacheSubscriptionData(response);
-      
+
       return Right({
         'subscription': _subscriptionModelToEntity(response.subscription),
         'usageStats': response.usageStats,
@@ -41,11 +41,12 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     Map<String, dynamic> purchaseData,
   ) async {
     try {
-      final response = await remoteDataSource.purchaseSubscription(plan, purchaseData);
-      
+      final response =
+          await remoteDataSource.purchaseSubscription(plan, purchaseData);
+
       // Cache updated subscription data
       await localDataSource.cacheSubscriptionData(response);
-      
+
       return Right(_subscriptionModelToEntity(response.subscription));
     } on DioError catch (e) {
       return Left(_handleDioException(e));
@@ -116,7 +117,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
       case DioErrorType.response:
         final statusCode = e.response?.statusCode;
         final message = e.response?.data?['message'] ?? 'Server error';
-        
+
         if (statusCode == 401) {
           return AuthFailure(message, code: statusCode);
         } else if (statusCode == 422) {
@@ -126,10 +127,10 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         }
       case DioErrorType.cancel:
         return const NetworkFailure('Request cancelled');
-      case DioErrorType.connectionError:
+      case DioErrorType.other:
         return const NetworkFailure('No internet connection');
       default:
         return UnknownFailure(e.message);
     }
   }
-} 
+}

@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/entities/user.dart';
-import '../../../core/error/failures.dart';
+import '../../../../core/error/failures.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../datasources/auth_local_data_source.dart';
 import '../models/login_request.dart';
@@ -116,8 +116,8 @@ class AuthRepositoryImpl implements AuthRepository {
       usageCount: userModel.usageCount,
       monthlyLimit: userModel.monthlyLimit,
       createdAt: userModel.createdAt,
-      lastLoginAt: userModel.lastLoginAt,
-      isEmailVerified: userModel.isEmailVerified,
+      updatedAt: userModel.lastLoginAt ?? userModel.createdAt,
+      emailVerifiedAt: userModel.isEmailVerified ? userModel.createdAt : null,
       metadata: userModel.metadata,
     );
   }
@@ -131,7 +131,7 @@ class AuthRepositoryImpl implements AuthRepository {
       case DioErrorType.response:
         final statusCode = e.response?.statusCode;
         final message = e.response?.data?['message'] ?? 'Server error';
-        
+
         if (statusCode == 401) {
           return AuthFailure(message, code: statusCode);
         } else if (statusCode == 422) {
@@ -141,10 +141,10 @@ class AuthRepositoryImpl implements AuthRepository {
         }
       case DioErrorType.cancel:
         return const NetworkFailure('Request cancelled');
-      case DioErrorType.connectionError:
+      case DioErrorType.other:
         return const NetworkFailure('No internet connection');
       default:
         return UnknownFailure(e.message);
     }
   }
-} 
+}

@@ -52,7 +52,7 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
             );
           } else if (state is HistoryLoaded) {
-            if (state.historyItems.isEmpty) {
+            if (state.items.isEmpty) {
               return const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -67,29 +67,32 @@ class _HistoryPageState extends State<HistoryPage> {
                 ),
               );
             }
-            
+
             return ListView.builder(
-              itemCount: state.historyItems.length,
+              itemCount: state.items.length,
               itemBuilder: (context, index) {
-                final item = state.historyItems[index];
+                final item = state.items[index];
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ListTile(
                     leading: const Icon(Icons.question_answer),
                     title: Text(
-                      item.question.length > 50 
-                          ? '${item.question.substring(0, 50)}...'
-                          : item.question,
+                      item.question?.isNotEmpty == true
+                          ? item.question!.length > 50
+                              ? '${item.question!.substring(0, 50)}...'
+                              : item.question!
+                          : 'No question',
                     ),
                     subtitle: Text(
-                      'Asked on ${item.timestamp.day}/${item.timestamp.month}/${item.timestamp.year}',
+                      'Asked on ${item.createdAt.day}/${item.createdAt.month}/${item.createdAt.year}',
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete),
                       onPressed: () {
                         context.read<HistoryBloc>().add(
-                          HistoryDeleteRequested(historyId: item.id),
-                        );
+                              HistoryItemDeleteRequested(itemId: item.id),
+                            );
                       },
                     ),
                     onTap: () {
@@ -103,10 +106,10 @@ class _HistoryPageState extends State<HistoryPage> {
               },
             );
           }
-          
+
           return const SizedBox.shrink();
         },
       ),
     );
   }
-} 
+}

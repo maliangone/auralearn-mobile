@@ -134,14 +134,14 @@ class _ApiClient implements ApiClient {
   }
 
   @override
-  Future<QuestionResponse> submitQuestion(request) async {
+  Future<QuestionResponseModel> submitQuestion(request) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(request.toJson());
-    final _result = await _dio
-        .fetch<Map<String, dynamic>>(_setStreamType<QuestionResponse>(Options(
+    final _result = await _dio.fetch<Map<String, dynamic>>(
+        _setStreamType<QuestionResponseModel>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
@@ -153,33 +153,31 @@ class _ApiClient implements ApiClient {
               data: _data,
             )
             .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
-    final value = QuestionResponse.fromJson(_result.data!);
+    final value = QuestionResponseModel.fromJson(_result.data!);
     return value;
   }
 
   @override
-  Future<Map<String, dynamic>> uploadImages(images) async {
+  Future<dynamic> uploadImages(images) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = FormData();
     _data.files.addAll(images.map((i) => MapEntry('images', i)));
-    final _result = await _dio.fetch<Map<String, dynamic>>(
-        _setStreamType<Map<String, dynamic>>(Options(
+    final _result = await _dio.fetch(_setStreamType<dynamic>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
       contentType: 'multipart/form-data',
     )
-            .compose(
-              _dio.options,
-              '/questions/upload-images',
-              queryParameters: queryParameters,
-              data: _data,
-            )
-            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
-    var value = _result.data!.map((k, dynamic v) =>
-        MapEntry(k, dynamic.fromJson(v as Map<String, dynamic>)));
+        .compose(
+          _dio.options,
+          '/questions/upload-images',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final value = _result.data;
     return value;
   }
 
@@ -305,26 +303,24 @@ class _ApiClient implements ApiClient {
   }
 
   @override
-  Future<Map<String, dynamic>> getUsageStats() async {
+  Future<dynamic> getUsageStats() async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
-    final _result = await _dio.fetch<Map<String, dynamic>>(
-        _setStreamType<Map<String, dynamic>>(Options(
+    final _result = await _dio.fetch(_setStreamType<dynamic>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
-            .compose(
-              _dio.options,
-              '/subscription/usage',
-              queryParameters: queryParameters,
-              data: _data,
-            )
-            .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
-    var value = _result.data!.map((k, dynamic v) =>
-        MapEntry(k, dynamic.fromJson(v as Map<String, dynamic>)));
+        .compose(
+          _dio.options,
+          '/subscription/usage',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final value = _result.data;
     return value;
   }
 

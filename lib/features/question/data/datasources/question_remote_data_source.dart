@@ -20,7 +20,7 @@ class QuestionRemoteDataSourceImpl implements QuestionRemoteDataSource {
   Future<QuestionResponseModel> submitQuestion(QuestionRequest request) async {
     try {
       final response = await apiClient.submitQuestion(request);
-      return QuestionResponseModel.fromJson(response.toJson());
+      return response;
     } catch (e) {
       rethrow;
     }
@@ -55,4 +55,4 @@ class QuestionRemoteDataSourceImpl implements QuestionRemoteDataSource {
       rethrow;
     }
   }
-} 
+}

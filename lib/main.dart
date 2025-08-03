@@ -11,6 +11,7 @@ import 'core/router/app_router.dart';
 import 'core/utils/logger.dart';
 
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'features/question/presentation/bloc/question_bloc.dart';
 import 'features/history/presentation/bloc/history_bloc.dart';

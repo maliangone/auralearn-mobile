@@ -44,7 +44,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      context.read<SubscriptionBloc>().add(SubscriptionStatusRequested());
+                      context
+                          .read<SubscriptionBloc>()
+                          .add(SubscriptionStatusRequested());
                     },
                     child: const Text('Retry'),
                   ),
@@ -76,11 +78,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                             'Status: ${state.subscription.isActive ? "Active" : "Inactive"}',
                             style: Theme.of(context).textTheme.bodyLarge,
                           ),
-                          if (state.subscription.expiryDate != null)
-                            Text(
-                              'Expires: ${state.subscription.expiryDate!.day}/${state.subscription.expiryDate!.month}/${state.subscription.expiryDate!.year}',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Expires: ${state.subscription.currentPeriodEnd.day}/${state.subscription.currentPeriodEnd.month}/${state.subscription.currentPeriodEnd.year}',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                         ],
                       ),
                     ),
@@ -114,7 +116,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                           // TODO: Implement subscription purchase
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Subscription purchase coming soon!'),
+                              content:
+                                  Text('Subscription purchase coming soon!'),
                             ),
                           );
                         },
@@ -125,10 +128,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               ),
             );
           }
-          
+
           return const SizedBox.shrink();
         },
       ),
     );
   }
-} 
+}

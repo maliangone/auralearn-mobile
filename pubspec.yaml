@@ -22,7 +22,7 @@ dependencies:
 
   # Image Handling
   image_picker: ^1.0.4
-  image_cropper: ^5.0.1
+  image_cropper: ^8.0.1
   cached_network_image: ^3.3.0
   photo_view: ^0.14.0
   image: ^4.1.3
@@ -52,7 +52,6 @@ dependencies:
   # File Handling
   path_provider: ^2.1.1
   permission_handler: ^11.0.1
-  file_picker: ^6.1.1
 
   # In-App Purchase
   in_app_purchase: ^3.1.11
@@ -92,13 +91,13 @@ flutter:
     - assets/animations/
     - assets/fonts/
 
-  fonts:
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
-        - asset: assets/fonts/Inter-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Inter-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Inter-Bold.ttf
-          weight: 700 
+  # fonts:
+  #   - family: Inter
+  #     fonts:
+  #       - asset: assets/fonts/Inter-Regular.ttf
+  #       - asset: assets/fonts/Inter-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Inter-SemiBold.ttf
+  #         weight: 600
+  #       - asset: assets/fonts/Inter-Bold.ttf
+  #         weight: 700 
