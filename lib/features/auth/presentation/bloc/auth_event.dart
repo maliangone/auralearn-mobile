@@ -45,4 +45,8 @@ class AuthRegisterRequested extends AuthEvent {
 
 class AuthLogoutRequested extends AuthEvent {}
 
-class AuthTokenRefreshRequested extends AuthEvent {} 
+class AuthTokenRefreshRequested extends AuthEvent {}
+
+class AuthGoogleSignInRequested extends AuthEvent {}
+
+class AuthAppleSignInRequested extends AuthEvent {}

@@ -8,26 +8,34 @@ import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
 import '../../domain/usecases/check_auth_status_usecase.dart';
+import '../../domain/usecases/oauth_login_usecase.dart';
 import '../../../../core/utils/logger.dart';
-import '../../../../core/error/failures.dart';
+
+import '../../../../core/usecases/usecase.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final LoginUseCase loginUseCase;
   final RegisterUseCase registerUseCase;
   final LogoutUseCase logoutUseCase;
   final CheckAuthStatusUseCase checkAuthStatusUseCase;
+  final GoogleSignInUseCase? googleSignInUseCase;
+  final AppleSignInUseCase? appleSignInUseCase;
 
   AuthBloc({
     required this.loginUseCase,
     required this.registerUseCase,
     required this.logoutUseCase,
     required this.checkAuthStatusUseCase,
+    this.googleSignInUseCase,
+    this.appleSignInUseCase,
   }) : super(AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
     on<AuthTokenRefreshRequested>(_onAuthTokenRefreshRequested);
+    on<AuthGoogleSignInRequested>(_onAuthGoogleSignInRequested);
+    on<AuthAppleSignInRequested>(_onAuthAppleSignInRequested);
   }
 
   Future<void> _onAuthCheckRequested(
@@ -35,9 +43,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
-    
+
     final result = await checkAuthStatusUseCase.call();
-    
+
     result.fold(
       (failure) {
         AppLogger.error('Auth check failed: ${failure.message}');
@@ -60,9 +68,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
-    
+
     final deviceInfo = await _getDeviceInfo();
-    
+
     final params = LoginParams(
       email: event.email,
       password: event.password,
@@ -70,9 +78,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       deviceId: deviceInfo['deviceId'],
       deviceName: deviceInfo['deviceName'],
     );
-    
+
     final result = await loginUseCase.call(params);
-    
+
     result.fold(
       (failure) {
         AppLogger.error('Login failed: ${failure.message}');
@@ -90,9 +98,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
-    
+
     final deviceInfo = await _getDeviceInfo();
-    
+
     final params = RegisterParams(
       email: event.email,
       password: event.password,
@@ -102,9 +110,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       deviceName: deviceInfo['deviceName'],
       referralCode: event.referralCode,
     );
-    
+
     final result = await registerUseCase.call(params);
-    
+
     result.fold(
       (failure) {
         AppLogger.error('Registration failed: ${failure.message}');
@@ -122,9 +130,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
-    
+
     final result = await logoutUseCase.call();
-    
+
     result.fold(
       (failure) {
         AppLogger.error('Logout failed: ${failure.message}');
@@ -144,7 +152,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     // Don't emit loading for token refresh to avoid UI flickering
     // final result = await refreshTokenUseCase.call();
-    
+
     // result.fold(
     //   (failure) {
     //     AppLogger.error('Token refresh failed: ${failure.message}');
@@ -157,10 +165,62 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     // );
   }
 
+  Future<void> _onAuthGoogleSignInRequested(
+    AuthGoogleSignInRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (googleSignInUseCase == null) {
+      emit(const AuthError(message: 'Google Sign-In not available'));
+      return;
+    }
+
+    emit(AuthLoading());
+    AppLogger.info('Google sign-in requested');
+
+    final result = await googleSignInUseCase!.call(NoParams());
+
+    result.fold(
+      (failure) {
+        AppLogger.error('Google sign-in failed: ${failure.message}');
+        emit(AuthError(message: failure.message));
+      },
+      (user) {
+        AppLogger.info('Google sign-in successful: ${user.email}');
+        emit(AuthAuthenticated(user: user));
+      },
+    );
+  }
+
+  Future<void> _onAuthAppleSignInRequested(
+    AuthAppleSignInRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (appleSignInUseCase == null) {
+      emit(const AuthError(message: 'Apple Sign-In not available'));
+      return;
+    }
+
+    emit(AuthLoading());
+    AppLogger.info('Apple sign-in requested');
+
+    final result = await appleSignInUseCase!.call(NoParams());
+
+    result.fold(
+      (failure) {
+        AppLogger.error('Apple sign-in failed: ${failure.message}');
+        emit(AuthError(message: failure.message));
+      },
+      (user) {
+        AppLogger.info('Apple sign-in successful: ${user.email}');
+        emit(AuthAuthenticated(user: user));
+      },
+    );
+  }
+
   Future<Map<String, String>> _getDeviceInfo() async {
     try {
       final deviceInfo = DeviceInfoPlugin();
-      
+
       if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
         return {
@@ -177,10 +237,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } catch (e) {
       AppLogger.error('Failed to get device info: $e');
     }
-    
+
     return {
       'deviceId': 'unknown',
       'deviceName': 'unknown',
     };
   }
-} 
+}

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'dart:io';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
@@ -10,6 +11,7 @@ import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/loading_button.dart';
+import '../widgets/oauth_button.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -78,17 +80,23 @@ class _LoginPageState extends State<LoginPage> {
                             const SizedBox(height: 24),
                             Text(
                               'Welcome Back',
-                              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.textPrimary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .displaySmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.textPrimary,
+                                  ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Sign in to continue learning',
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: AppTheme.textSecondary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                  ),
                             ),
                           ],
                         ),
@@ -117,7 +125,9 @@ class _LoginPageState extends State<LoginPage> {
                         prefixIcon: Icons.lock_outlined,
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                             color: AppTheme.textSecondary,
                           ),
                           onPressed: () {
@@ -152,7 +162,8 @@ class _LoginPageState extends State<LoginPage> {
                             onPressed: () {
                               // TODO: Implement forgot password
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Feature coming soon')),
+                                const SnackBar(
+                                    content: Text('Feature coming soon')),
                               );
                             },
                             child: Text(
@@ -169,7 +180,7 @@ class _LoginPageState extends State<LoginPage> {
                       BlocBuilder<AuthBloc, AuthState>(
                         builder: (context, state) {
                           final isLoading = state is AuthLoading;
-                          
+
                           return LoadingButton(
                             onPressed: isLoading ? null : _handleLogin,
                             isLoading: isLoading,
@@ -188,9 +199,12 @@ class _LoginPageState extends State<LoginPage> {
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
                               'or',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.textSecondary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                  ),
                             ),
                           ),
                           const Expanded(child: Divider()),
@@ -199,6 +213,29 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 24),
 
+                      // OAuth buttons
+                      OAuthButton.google(
+                        onPressed: () {
+                          context
+                              .read<AuthBloc>()
+                              .add(AuthGoogleSignInRequested());
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      if (Platform.isIOS)
+                        OAuthButton.apple(
+                          onPressed: () {
+                            context
+                                .read<AuthBloc>()
+                                .add(AuthAppleSignInRequested());
+                          },
+                        ),
+
+                      if (Platform.isIOS) const SizedBox(height: 24),
+                      if (!Platform.isIOS) const SizedBox(height: 12),
+
                       // Sign up link
                       Center(
                         child: TextButton(
@@ -206,9 +243,12 @@ class _LoginPageState extends State<LoginPage> {
                           child: RichText(
                             text: TextSpan(
                               text: "Don't have an account? ",
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.textSecondary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                  ),
                               children: [
                                 TextSpan(
                                   text: 'Sign Up',
@@ -236,12 +276,12 @@ class _LoginPageState extends State<LoginPage> {
   void _handleLogin() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(
-        AuthLoginRequested(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-          rememberMe: _rememberMe,
-        ),
-      );
+            AuthLoginRequested(
+              email: _emailController.text.trim(),
+              password: _passwordController.text,
+              rememberMe: _rememberMe,
+            ),
+          );
     }
   }
 
@@ -251,4 +291,4 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController.dispose();
     super.dispose();
   }
-} 
+}

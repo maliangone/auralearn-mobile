@@ -3,29 +3,50 @@ import 'package:dio/dio.dart';
 
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/entities/user.dart';
+
 import '../../../../core/error/failures.dart';
+import '../../../../core/error/exceptions.dart';
+import '../../../../core/config/app_config.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../datasources/auth_local_data_source.dart';
+import '../datasources/oauth_data_source.dart';
+import '../datasources/mock_auth_data_source.dart';
 import '../models/login_request.dart';
 import '../models/register_request.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthRemoteDataSource remoteDataSource;
+  final AuthRemoteDataSource? remoteDataSource;
   final AuthLocalDataSource localDataSource;
+  final OAuthDataSource? oauthDataSource;
+  final MockAuthDataSource? mockDataSource;
 
   AuthRepositoryImpl({
-    required this.remoteDataSource,
+    this.remoteDataSource,
     required this.localDataSource,
+    this.oauthDataSource,
+    this.mockDataSource,
   });
 
   @override
   Future<Either<Failure, User>> login(LoginRequest request) async {
     try {
-      final authResponse = await remoteDataSource.login(request);
+      if (AppConfig.enableMockMode && mockDataSource != null) {
+        final authResponse = await mockDataSource!.login(request);
+        await localDataSource.saveAuthData(authResponse);
+        return Right(_userModelToEntity(authResponse.user));
+      }
+
+      if (remoteDataSource == null) {
+        return const Left(NetworkFailure('No data source available'));
+      }
+
+      final authResponse = await remoteDataSource!.login(request);
       await localDataSource.saveAuthData(authResponse);
       return Right(_userModelToEntity(authResponse.user));
     } on DioError catch (e) {
       return Left(_handleDioException(e));
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
@@ -34,11 +55,117 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, User>> register(RegisterRequest request) async {
     try {
-      final authResponse = await remoteDataSource.register(request);
+      if (AppConfig.enableMockMode && mockDataSource != null) {
+        final authResponse = await mockDataSource!.register(request);
+        await localDataSource.saveAuthData(authResponse);
+        return Right(_userModelToEntity(authResponse.user));
+      }
+
+      if (remoteDataSource == null) {
+        return const Left(NetworkFailure('No data source available'));
+      }
+
+      final authResponse = await remoteDataSource!.register(request);
       await localDataSource.saveAuthData(authResponse);
       return Right(_userModelToEntity(authResponse.user));
     } on DioError catch (e) {
       return Left(_handleDioException(e));
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } catch (e) {
+      return Left(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, User>> signInWithGoogle() async {
+    try {
+      if (AppConfig.enableMockMode && mockDataSource != null) {
+        final authResponse =
+            await mockDataSource!.signInWithGoogle('mock_google_token');
+        await localDataSource.saveAuthData(authResponse);
+        return Right(_userModelToEntity(authResponse.user));
+      }
+
+      if (oauthDataSource == null) {
+        return const Left(AuthFailure('OAuth not available'));
+      }
+
+      final oauthUser = await oauthDataSource!.signInWithGoogle();
+
+      // In a real app, you'd send the OAuth token to your backend
+      // For now, we'll create a mock auth response
+      if (remoteDataSource != null) {
+        // TODO: Implement backend OAuth verification
+        // final authResponse = await remoteDataSource!.signInWithOAuth(oauthUser);
+      }
+
+      // For now, create a user from OAuth data
+      final user = User(
+        id: oauthUser.id,
+        email: oauthUser.email,
+        name: oauthUser.name ?? 'Google User',
+        avatar: oauthUser.photoUrl,
+        subscriptionPlan: 'free',
+        usageCount: 0,
+        monthlyLimit: 10,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        emailVerifiedAt: DateTime.now(),
+        metadata: {'provider': 'google'},
+      );
+
+      return Right(user);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
+    } catch (e) {
+      return Left(UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, User>> signInWithApple() async {
+    try {
+      if (AppConfig.enableMockMode && mockDataSource != null) {
+        final authResponse =
+            await mockDataSource!.signInWithApple('mock_apple_token');
+        await localDataSource.saveAuthData(authResponse);
+        return Right(_userModelToEntity(authResponse.user));
+      }
+
+      if (oauthDataSource == null) {
+        return const Left(AuthFailure('OAuth not available'));
+      }
+
+      final oauthUser = await oauthDataSource!.signInWithApple();
+
+      // In a real app, you'd send the OAuth token to your backend
+      // For now, we'll create a mock auth response
+      if (remoteDataSource != null) {
+        // TODO: Implement backend OAuth verification
+        // final authResponse = await remoteDataSource!.signInWithOAuth(oauthUser);
+      }
+
+      // For now, create a user from OAuth data
+      final user = User(
+        id: oauthUser.id,
+        email: oauthUser.email.isNotEmpty
+            ? oauthUser.email
+            : 'apple.user@example.com',
+        name: oauthUser.name ?? 'Apple User',
+        avatar: oauthUser.photoUrl,
+        subscriptionPlan: 'free',
+        usageCount: 0,
+        monthlyLimit: 10,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        emailVerifiedAt: DateTime.now(),
+        metadata: {'provider': 'apple'},
+      );
+
+      return Right(user);
+    } on AuthException catch (e) {
+      return Left(AuthFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
@@ -47,7 +174,15 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> logout() async {
     try {
-      await remoteDataSource.logout();
+      if (AppConfig.enableMockMode && mockDataSource != null) {
+        await mockDataSource!.logout();
+        await localDataSource.clearAuthData();
+        return const Right(null);
+      }
+
+      if (remoteDataSource != null) {
+        await remoteDataSource!.logout();
+      }
       await localDataSource.clearAuthData();
       return const Right(null);
     } on DioError catch (e) {
@@ -68,7 +203,17 @@ class AuthRepositoryImpl implements AuthRepository {
         return const Left(AuthFailure('No refresh token available'));
       }
 
-      final authResponse = await remoteDataSource.refreshToken(refreshToken);
+      if (AppConfig.enableMockMode && mockDataSource != null) {
+        final authResponse = await mockDataSource!.refreshToken(refreshToken);
+        await localDataSource.saveAuthData(authResponse);
+        return Right(_userModelToEntity(authResponse.user));
+      }
+
+      if (remoteDataSource == null) {
+        return const Left(NetworkFailure('No data source available'));
+      }
+
+      final authResponse = await remoteDataSource!.refreshToken(refreshToken);
       await localDataSource.saveAuthData(authResponse);
       return Right(_userModelToEntity(authResponse.user));
     } on DioError catch (e) {
