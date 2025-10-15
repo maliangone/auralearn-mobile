@@ -35,19 +35,26 @@ This is the mobile frontend for AuraLearn, built with Flutter for cross-platform
 auralearn-mobile/
 ├── lib/
 │   ├── core/                    # Core utilities and shared code
+│   │   ├── config/              # App configuration and constants
 │   │   ├── di/                  # Dependency injection setup
+│   │   ├── error/               # Error handling and exceptions
 │   │   ├── network/             # HTTP client and interceptors
 │   │   ├── router/              # App navigation and routing
 │   │   ├── storage/             # Local storage utilities
 │   │   ├── theme/               # App theming and styles
+│   │   ├── usecases/            # Base use case classes
 │   │   └── utils/               # Helper utilities and validators
 │   └── features/                # Feature-based modules
 │       ├── auth/                # Authentication and user management
 │       │   ├── data/           # Data sources and repositories
 │       │   ├── domain/         # Business logic and entities
 │       │   └── presentation/   # UI screens and widgets
+│       ├── history/             # Question history management
 │       ├── home/               # Home screen and navigation
 │       ├── onboarding/         # App onboarding flow
+│       ├── profile/            # User profile management
+│       ├── question/           # Q&A functionality
+│       └── subscription/       # Subscription management
 │       ├── question/           # Question capture and processing
 │       └── subscription/       # Subscription and billing
 ├── pubspec.yaml                 # Flutter dependencies
@@ -69,7 +76,6 @@ This app follows **Clean Architecture** principles with **BLoC** state managemen
 - Dart 3.0+
 - Android Studio (for Android development)
 - Xcode (for iOS development, macOS only)
-- AuraLearn Backend API running (see backend README)
 
 ### Setup
 
@@ -88,10 +94,7 @@ flutter pub get
 flutter doctor
 ```
 
-3. **Configure API Endpoint**
-   - Update API base URL in `lib/core/network/` if backend is not running on localhost:8000
-
-4. **Run the App**
+3. **Run the App (Mock Mode)**
 ```bash
 # List available devices
 flutter devices
@@ -102,6 +105,12 @@ flutter run -d <device-id>
 # Or run on all connected devices
 flutter run
 ```
+
+**🎉 The app runs in mock mode by default - no backend setup required!**
+
+### Mock Mode vs Real Backend
+- **Mock Mode (Default)**: App runs with simulated data, perfect for frontend development
+- **Real Backend**: Set `ENABLE_MOCK_MODE=false` to connect to live API
 
 ### Development
 

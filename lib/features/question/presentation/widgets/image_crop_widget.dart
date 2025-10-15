@@ -23,7 +23,6 @@ class _ImageCropWidgetState extends State<ImageCropWidget> {
   late Rect _cropArea;
   Size _imageSize = Size.zero;
   Size _displaySize = Size.zero;
-  double _imageScale = 1.0;
 
   @override
   void initState() {
@@ -248,7 +247,7 @@ class _ImageCropWidgetState extends State<ImageCropWidget> {
       );
     }
 
-    _imageScale = _displaySize.width / _imageSize.width;
+    // Scale tracking removed - not used elsewhere
   }
 
   void _updateCropArea({

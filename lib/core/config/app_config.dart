@@ -41,7 +41,7 @@ class AppConfig {
 
   static const bool enableMockMode = bool.fromEnvironment(
     'ENABLE_MOCK_MODE',
-    defaultValue: false,
+    defaultValue: true,
   );
 
   // App Constraints

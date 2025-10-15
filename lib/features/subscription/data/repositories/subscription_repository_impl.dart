@@ -58,8 +58,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
   ) async {
     try {
       if (AppConfig.enableMockMode && mockDataSource != null) {
-        final response =
-            await mockDataSource!.purchaseSubscription(purchaseData);
+        await mockDataSource!.purchaseSubscription(purchaseData);
         // Mock doesn't return Subscription entity, create one
         return Right(Subscription(
           id: 'mock_sub_id',
@@ -209,8 +208,6 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         return const NetworkFailure('Request cancelled');
       case DioErrorType.other:
         return const NetworkFailure('No internet connection');
-      default:
-        return UnknownFailure(e.message);
     }
   }
 }

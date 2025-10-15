@@ -54,7 +54,7 @@ class HistoryRepositoryImpl implements HistoryRepository {
       } else if (e.response?.statusCode != null && e.response!.statusCode! >= 500) {
         return const Left(ServerFailure('Server error occurred'));
       }
-      return Left(UnknownFailure(e.message ?? 'Unknown error occurred'));
+      return Left(UnknownFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
@@ -79,7 +79,7 @@ class HistoryRepositoryImpl implements HistoryRepository {
       } else if (e.response?.statusCode == 404) {
         return const Left(ValidationFailure('History item not found'));
       }
-      return Left(UnknownFailure(e.message ?? 'Unknown error occurred'));
+      return Left(UnknownFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
@@ -102,7 +102,7 @@ class HistoryRepositoryImpl implements HistoryRepository {
       } else if (e.response?.statusCode == 401) {
         return const Left(AuthFailure('Authentication required'));
       }
-      return Left(UnknownFailure(e.message ?? 'Unknown error occurred'));
+      return Left(UnknownFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }

@@ -1,25 +1,3 @@
-# 
-
-
-# Virtual environments
-venv/
-env/
-ENV/
-.venv/
-.env/
-.ENV/
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.env
-
-# VSCode
-.vscode/
-
 # Flutter/Dart
 .dart_tool/
 .flutter-plugins
@@ -29,7 +7,21 @@ ENV/
 .pub/
 build/
 
-# iOS build artifacts
+# Android
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/app/build/
+android/app/outputs/
+android/app/intermediates/
+android/app/generated/
+android/.gradle/
+android/gradle/
+android/local.properties
+android/captures/
+android/external-native-build/
+
+# iOS
 ios/.generated/
 ios/Flutter/Flutter.framework/
 ios/Flutter/Flutter.podspec
@@ -40,34 +32,24 @@ ios/Flutter/flutter_assets/
 ios/Flutter/flutter_export_environment.sh
 ios/Flutter/App.framework/
 ios/Flutter/Flutter.framework/
-
-# Android build artifacts  
-android/app/debug/
-android/app/profile/
-android/app/release/
-android/app/build/
-android/app/outputs/
-android/app/intermediates/
-android/app/generated/
-android/.gradle/
-android/gradle/
-android/gradlew/
-android/gradlew.bat
-android/local.properties
-android/captures/
-android/external-native-build/
+ios/Flutter/.last_build_id
 
 # Generated files
 **/generated_plugin_registrant.*
 **/GeneratedPluginRegistrant.*
 **/flutter_export_environment.sh
 
-# IDE files
+# IDE
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
 *.swp
 *.swo
 *~
 
-# OS generated files
+# OS
 .DS_Store
 .DS_Store?
 ._*
@@ -78,127 +60,16 @@ Thumbs.db
 desktop.ini
 
 # Logs
+*.log
 logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# Docker
-.docker/
-docker-compose.override.yml
-
-# Backup files
-*.bak
-*.backup
-*.orig
-
-# Temporary files
-temp/
-tmp/
-.temp/
-.tmp/
-
-# Coverage reports
-coverage/
-*.lcov
-.coverage
-htmlcov/
-
-# Local development
-local/
-.local/
-
-# Secrets and keys
-*.pem
-*.key
-*.p12
-*.crt
-
-# Redis
-dump.rdb
-
-# PostgreSQL
-*.sql.gz
-*.backup
-
-# Archives
-*.tar
-*.tar.gz
-*.zip
-*.rar
-
-# Node.js (if any remaining frontend tools)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Build outputs
-out/
-
-# Monitoring and profiling
-.prof
-
-# Local SSL certificates
-ssl/
-certs/ 
-
-
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
-
-# Additional Flutter platform build artifacts
-macos/Flutter/Generated.xcconfig
-macos/Flutter/Flutter.framework/
-macos/Flutter/Flutter.podspec
-linux/flutter/ephemeral/
-linux/flutter/generated_plugins.cmake
-windows/flutter/ephemeral/
-windows/flutter/generated_plugins.cmake
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
 
 # Build outputs
 *.apk
@@ -206,31 +77,39 @@ windows/flutter/generated_plugins.cmake
 *.ipa
 *.app
 
-# Gradle cache and wrapper
-.gradle/
-gradle-wrapper.jar
+# Coverage
+coverage/
+*.lcov
+.coverage
+htmlcov/
 
-# IDE project files (additional patterns)
-*.xcworkspace
-*.xcodeproj
-*.pbxuser
-*.mode1v3
-*.mode2v3
-*.perspectivev3
-*.xccheckout
-*.xcscmblueprint
+# Temporary files
+temp/
+tmp/
+.temp/
+.tmp/
 
-# Xcode specific
-DerivedData/
-*.hmap
-*.xcuserstate
+# Backup files
+*.bak
+*.backup
+*.orig
 
-# Android specific build files
+# Secrets and keys
+*.pem
+*.key
+*.p12
+*.crt
 *.jks
 *.keystore
 secrets.properties
 key.properties
 
-# Test coverage
-coverage/
-*.lcov
+# Archives
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# Symbolication
+app.*.symbols
+app.*.map.json

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:io';
 
 import '../../../../core/theme/app_theme.dart';
 import '../bloc/question_bloc.dart';
@@ -27,7 +26,7 @@ class _QuestionPageState extends State<QuestionPage> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   
-  List<ChatMessage> _messages = [];
+  final List<ChatMessage> _messages = [];
   List<Map<String, dynamic>>? _images;
   bool _isLoading = false;
 

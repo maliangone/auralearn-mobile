@@ -288,8 +288,6 @@ class AuthRepositoryImpl implements AuthRepository {
         return const NetworkFailure('Request cancelled');
       case DioErrorType.other:
         return const NetworkFailure('No internet connection');
-      default:
-        return UnknownFailure(e.message);
     }
   }
 }
