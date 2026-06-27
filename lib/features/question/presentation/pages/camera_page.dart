@@ -4,7 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/tokens.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -17,90 +17,95 @@ class CameraPage extends StatefulWidget {
 
 class _CameraPageState extends State<CameraPage> {
   final ImagePicker _picker = ImagePicker();
-  List<XFile> _selectedImages = [];
+  final List<XFile> _selectedImages = [];
   bool _isLoading = false;
+
+  bool get _atLimit =>
+      _selectedImages.length >= AppConfig.maxImagesPerQuestion;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: const Text('Capture Question'),
+        backgroundColor: AppColors.background,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.close_rounded),
+          color: AppColors.textPrimary,
           onPressed: () => context.pop(),
+        ),
+        title: Text(
+          '拍题',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
         ),
         actions: [
           if (_selectedImages.isNotEmpty)
             TextButton(
               onPressed: _proceedToCrop,
               child: Text(
-                'Next (${_selectedImages.length}/${AppConfig.maxImagesPerQuestion})',
-                style: const TextStyle(color: Colors.white),
+                '下一步 (${_selectedImages.length}/${AppConfig.maxImagesPerQuestion})',
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
         ],
       ),
       body: Column(
         children: [
-          // Instructions
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: AppTheme.primary.withOpacity(0.1),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.camera_alt,
-                  color: AppTheme.primary,
-                  size: 32,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Capture or select up to ${AppConfig.maxImagesPerQuestion} images',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
+          // ----------------------------------------------------------------
+          // Helper text
+          // ----------------------------------------------------------------
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.base,
+              vertical: AppSpacing.sm,
+            ),
+            child: Text(
+              '拍下题目，确保清晰可见（最多 ${AppConfig.maxImagesPerQuestion} 张）',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Make sure the question is clearly visible',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white70,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+              textAlign: TextAlign.center,
             ),
           ),
 
-          // Selected images preview
-          if (_selectedImages.isNotEmpty) ...[
-            Container(
-              height: 120,
-              padding: const EdgeInsets.all(16),
+          // ----------------------------------------------------------------
+          // Selected images preview strip
+          // ----------------------------------------------------------------
+          if (_selectedImages.isNotEmpty)
+            SizedBox(
+              height: 108,
               child: ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.base,
+                  vertical: AppSpacing.sm,
+                ),
                 scrollDirection: Axis.horizontal,
                 itemCount: _selectedImages.length,
                 itemBuilder: (context, index) {
                   return Container(
-                    width: 100,
-                    margin: const EdgeInsets.only(right: 12),
+                    width: 90,
+                    margin: const EdgeInsets.only(right: AppSpacing.sm),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.primary, width: 2),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: Border.all(
+                          color: AppColors.primary, width: 2),
                     ),
                     child: Stack(
+                      fit: StackFit.expand,
                       children: [
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.md - 2),
                           child: Image.file(
                             File(_selectedImages[index].path),
-                            width: 100,
-                            height: 120,
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -110,17 +115,15 @@ class _CameraPageState extends State<CameraPage> {
                           child: GestureDetector(
                             onTap: () => _removeImage(index),
                             child: Container(
-                              width: 24,
-                              height: 24,
+                              width: 22,
+                              height: 22,
                               decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(12),
+                                color: AppColors.error,
+                                borderRadius:
+                                    BorderRadius.circular(11),
                               ),
-                              child: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 16,
-                              ),
+                              child: const Icon(Icons.close,
+                                  color: Colors.white, size: 14),
                             ),
                           ),
                         ),
@@ -128,16 +131,18 @@ class _CameraPageState extends State<CameraPage> {
                           bottom: 4,
                           left: 4,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
                             decoration: BoxDecoration(
-                              color: AppTheme.primary,
-                              borderRadius: BorderRadius.circular(4),
+                              color: AppColors.primary,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.sm),
                             ),
                             child: Text(
                               '${index + 1}',
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -149,142 +154,94 @@ class _CameraPageState extends State<CameraPage> {
                 },
               ),
             ),
-          ],
 
-          // Camera actions
+          // ----------------------------------------------------------------
+          // Primary action cards — exactly two: 拍照 / 从相册选择
+          // ----------------------------------------------------------------
+          // Content-height, equal-height cards centered in the available space
+          // (was a full-height Expanded that stretched the cards top-to-bottom).
           Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Camera button
-                GestureDetector(
-                  onTap: _isLoading || _selectedImages.length >= AppConfig.maxImagesPerQuestion
-                      ? null
-                      : () => _captureImage(ImageSource.camera),
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: _selectedImages.length >= AppConfig.maxImagesPerQuestion
-                          ? Colors.grey
-                          : Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 4,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.camera_alt,
-                      size: 32,
-                      color: _selectedImages.length >= AppConfig.maxImagesPerQuestion
-                          ? Colors.grey.shade600
-                          : Colors.black,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Gallery and camera buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildActionButton(
-                      icon: Icons.photo_library,
-                      label: 'Gallery',
-                      onTap: _selectedImages.length >= AppConfig.maxImagesPerQuestion
-                          ? null
-                          : () => _captureImage(ImageSource.gallery),
-                    ),
-                    _buildActionButton(
-                      icon: Icons.camera_alt,
-                      label: 'Camera',
-                      onTap: _selectedImages.length >= AppConfig.maxImagesPerQuestion
-                          ? null
-                          : () => _captureImage(ImageSource.camera),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Bottom actions
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                if (_selectedImages.isNotEmpty)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _proceedToCrop,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: Text(
-                        'Continue with ${_selectedImages.length} image${_selectedImages.length > 1 ? 's' : ''}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.base),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _ActionCard(
+                          icon: Icons.camera_alt_outlined,
+                          label: '拍照',
+                          disabled: _isLoading || _atLimit,
+                          onTap: () => _captureImage(ImageSource.camera),
                         ),
                       ),
-                    ),
-                  ),
-                
-                const SizedBox(height: 12),
-                
-                TextButton(
-                  onPressed: () => context.go('/question'),
-                  child: const Text(
-                    'Type question instead',
-                    style: TextStyle(color: Colors.white70),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: _ActionCard(
+                          icon: Icons.photo_library_outlined,
+                          label: '从相册选择',
+                          disabled: _isLoading || _atLimit,
+                          onTap: () => _captureImage(ImageSource.gallery),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-  }) {
-    final isDisabled = onTap == null;
-    
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: isDisabled ? Colors.grey.shade800 : Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: isDisabled ? Colors.grey : Colors.white,
-                width: 2,
               ),
             ),
-            child: Icon(
-              icon,
-              color: isDisabled ? Colors.grey : Colors.white,
-              size: 24,
-            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: isDisabled ? Colors.grey : Colors.white,
-              fontSize: 12,
+
+          // ----------------------------------------------------------------
+          // Continue button (visible once an image is selected)
+          // ----------------------------------------------------------------
+          if (_selectedImages.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.base,
+                vertical: AppSpacing.sm,
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _proceedToCrop,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.base),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.lg),
+                    ),
+                  ),
+                  child: Text(
+                    '继续（已选 ${_selectedImages.length} 张）',
+                    style:
+                        Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: AppColors.textOnPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                  ),
+                ),
+              ),
+            ),
+
+          // ----------------------------------------------------------------
+          // Text input fallback
+          // ----------------------------------------------------------------
+          Padding(
+            padding: const EdgeInsets.only(
+              bottom: AppSpacing.lg,
+              top: AppSpacing.xs,
+            ),
+            child: TextButton(
+              onPressed: () => context.go('/question'),
+              child: Text(
+                '改用文字输入',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+              ),
             ),
           ),
         ],
@@ -293,28 +250,21 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   Future<void> _captureImage(ImageSource source) async {
-    if (_isLoading || _selectedImages.length >= AppConfig.maxImagesPerQuestion) {
-      return;
-    }
+    if (_isLoading || _atLimit) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // Check permissions
       if (source == ImageSource.camera) {
-        final cameraStatus = await Permission.camera.request();
-        if (cameraStatus.isDenied) {
-          _showPermissionDeniedDialog('Camera');
+        final status = await Permission.camera.request();
+        if (status.isDenied) {
+          _showPermissionDeniedDialog('相机');
           return;
         }
-      }
-
-      if (source == ImageSource.gallery) {
-        final storageStatus = await Permission.photos.request();
-        if (storageStatus.isDenied) {
-          _showPermissionDeniedDialog('Photos');
+      } else {
+        final status = await Permission.photos.request();
+        if (status.isDenied) {
+          _showPermissionDeniedDialog('相册');
           return;
         }
       }
@@ -327,61 +277,49 @@ class _CameraPageState extends State<CameraPage> {
       );
 
       if (image != null) {
-        // Check file size
         final file = File(image.path);
         final fileSize = await file.length();
-        
         if (fileSize > AppConfig.maxImageSizeMB * 1024 * 1024) {
-          _showErrorDialog('Image is too large. Please select an image smaller than ${AppConfig.maxImageSizeMB}MB.');
+          _showErrorDialog(
+              '图片过大，请选择小于 ${AppConfig.maxImageSizeMB}MB 的图片。');
           return;
         }
-
-        setState(() {
-          _selectedImages.add(image);
-        });
-
+        setState(() => _selectedImages.add(image));
         AppLogger.info('Image captured: ${image.path}');
       }
     } catch (e) {
       AppLogger.error('Error capturing image: $e');
-      _showErrorDialog('Failed to capture image. Please try again.');
+      _showErrorDialog('获取图片失败，请重试。');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
-  void _removeImage(int index) {
-    setState(() {
-      _selectedImages.removeAt(index);
-    });
-  }
+  void _removeImage(int index) =>
+      setState(() => _selectedImages.removeAt(index));
 
   void _proceedToCrop() {
     if (_selectedImages.isEmpty) return;
-
-    final imagePaths = _selectedImages.map((image) => image.path).toList();
-    context.go('/crop', extra: imagePaths);
+    context.go('/crop',
+        extra: _selectedImages.map((x) => x.path).toList());
   }
 
-  void _showPermissionDeniedDialog(String permission) {
+  void _showPermissionDeniedDialog(String name) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('$permission Permission Required'),
-        content: Text('Please allow access to $permission in your device settings to capture images.'),
+      builder: (ctx) => AlertDialog(
+        title: Text('需要$name权限'),
+        content: Text('请在系统设置中允许访问$name，以便拍题。'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消')),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.of(ctx).pop();
               openAppSettings();
             },
-            child: const Text('Settings'),
+            child: const Text('去设置'),
           ),
         ],
       ),
@@ -391,16 +329,78 @@ class _CameraPageState extends State<CameraPage> {
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Error'),
+      builder: (ctx) => AlertDialog(
+        title: const Text('出错了'),
         content: Text(message),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('确定')),
         ],
       ),
     );
   }
-} 
+}
+
+// ---------------------------------------------------------------------------
+// Action card — one of the two primary affordances
+// ---------------------------------------------------------------------------
+class _ActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool disabled;
+  final VoidCallback onTap;
+
+  const _ActionCard({
+    required this.icon,
+    required this.label,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveColor =
+        disabled ? AppColors.textHint : AppColors.primary;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: disabled ? null : onTap,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.xxl,
+            horizontal: AppSpacing.base,
+          ),
+          decoration: BoxDecoration(
+            color: disabled
+                ? AppColors.surfaceHover
+                : AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            border: Border.all(
+              color: disabled ? AppColors.border : AppColors.primary,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: effectiveColor),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                label,
+                style:
+                    Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: effectiveColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/entities/user.dart';
+import '../../domain/entities/oauth_user.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
@@ -11,6 +14,8 @@ import '../datasources/auth_remote_data_source.dart';
 import '../datasources/auth_local_data_source.dart';
 import '../datasources/oauth_data_source.dart';
 import '../datasources/mock_auth_data_source.dart';
+import '../models/auth_response.dart';
+import '../models/user_model.dart';
 import '../models/login_request.dart';
 import '../models/register_request.dart';
 
@@ -92,30 +97,11 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       final oauthUser = await oauthDataSource!.signInWithGoogle();
-
-      // In a real app, you'd send the OAuth token to your backend
-      // For now, we'll create a mock auth response
-      if (remoteDataSource != null) {
-        // TODO: Implement backend OAuth verification
-        // final authResponse = await remoteDataSource!.signInWithOAuth(oauthUser);
-      }
-
-      // For now, create a user from OAuth data
-      final user = User(
-        id: oauthUser.id,
-        email: oauthUser.email,
-        name: oauthUser.name ?? 'Google User',
-        avatar: oauthUser.photoUrl,
-        subscriptionPlan: 'free',
-        usageCount: 0,
-        monthlyLimit: 10,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        emailVerifiedAt: DateTime.now(),
-        metadata: {'provider': 'google'},
-      );
-
-      return Right(user);
+      final authResponse = await _exchangeOAuthForSession(oauthUser);
+      await localDataSource.saveAuthData(authResponse);
+      return Right(_userModelToEntity(authResponse.user));
+    } on OAuthException catch (e) {
+      return Left(AuthFailure(e.message));
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
     } catch (e) {
@@ -138,37 +124,81 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       final oauthUser = await oauthDataSource!.signInWithApple();
-
-      // In a real app, you'd send the OAuth token to your backend
-      // For now, we'll create a mock auth response
-      if (remoteDataSource != null) {
-        // TODO: Implement backend OAuth verification
-        // final authResponse = await remoteDataSource!.signInWithOAuth(oauthUser);
-      }
-
-      // For now, create a user from OAuth data
-      final user = User(
-        id: oauthUser.id,
-        email: oauthUser.email.isNotEmpty
-            ? oauthUser.email
-            : 'apple.user@example.com',
-        name: oauthUser.name ?? 'Apple User',
-        avatar: oauthUser.photoUrl,
-        subscriptionPlan: 'free',
-        usageCount: 0,
-        monthlyLimit: 10,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        emailVerifiedAt: DateTime.now(),
-        metadata: {'provider': 'apple'},
-      );
-
-      return Right(user);
+      final authResponse = await _exchangeOAuthForSession(oauthUser);
+      await localDataSource.saveAuthData(authResponse);
+      return Right(_userModelToEntity(authResponse.user));
+    } on OAuthException catch (e) {
+      return Left(AuthFailure(e.message));
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
+  }
+
+  /// TOKEN-EXCHANGE SEAM (BYOK-proxy model).
+  ///
+  /// In production the AuraLearn account JWT is NOT minted on the device — it is
+  /// issued by the accounts service (`AppConfig.accountsBaseUrl` / ACCOUNTS_URL)
+  /// which verifies the provider [oauthUser.idToken] / [oauthUser.authorizationCode]
+  /// and returns `{ accessToken, refreshToken, user }`. The proxy then verifies
+  /// that account JWT's signature locally on every `/solve`.
+  ///
+  /// There is no real accounts backend yet, so this method builds a LOCAL DEV
+  /// session so the rest of the app (router guards, `isLoggedIn`, secure token
+  /// store) works end-to-end. Replace the body with the real call below.
+  ///
+  ///   TODO(integration): exchange OAuth identity -> account JWT at ACCOUNTS_URL.
+  ///   e.g. add `AuthRemoteDataSource.exchangeOAuth(oauthUser)` ->
+  ///     POST {accountsBaseUrl}/auth/oauth
+  ///       { provider, idToken, authorizationCode? }
+  ///     -> AuthResponse { accessToken, refreshToken, user }
+  ///   Then: `return await remoteDataSource!.exchangeOAuth(oauthUser);`
+  Future<AuthResponse> _exchangeOAuthForSession(OAuthUser oauthUser) async {
+    final providerName =
+        oauthUser.provider == OAuthProvider.google ? 'google' : 'apple';
+
+    final email = oauthUser.email.isNotEmpty
+        ? oauthUser.email
+        : '$providerName.user@auralearn.local';
+
+    final user = UserModel(
+      id: oauthUser.id,
+      email: email,
+      name: oauthUser.name ??
+          (oauthUser.provider == OAuthProvider.google
+              ? 'Google User'
+              : 'Apple User'),
+      avatar: oauthUser.photoUrl,
+      subscriptionPlan: 'free',
+      usageCount: 0,
+      monthlyLimit: AppConfig.subscriptionLimits['free'] ?? 10,
+      createdAt: DateTime.now(),
+      lastLoginAt: DateTime.now(),
+      isEmailVerified: true,
+      metadata: {'provider': providerName},
+    );
+
+    // Dev-only placeholder tokens. The real access/refresh tokens come from the
+    // accounts service (see TODO above) and are what the proxy verifies.
+    return AuthResponse(
+      accessToken: _devToken('access', oauthUser, providerName),
+      refreshToken: _devToken('refresh', oauthUser, providerName),
+      user: user,
+      expiresIn: 3600,
+    );
+  }
+
+  /// Encodes a non-secret, clearly-marked dev token. NOT a real JWT; only used
+  /// to keep the local session machinery functional until ACCOUNTS_URL lands.
+  String _devToken(String kind, OAuthUser oauthUser, String provider) {
+    final payload = json.encode({
+      'dev': true,
+      'kind': kind,
+      'provider': provider,
+      'sub': oauthUser.id,
+    });
+    return 'devoauth_${kind}_${base64Encode(utf8.encode(payload))}';
   }
 
   @override

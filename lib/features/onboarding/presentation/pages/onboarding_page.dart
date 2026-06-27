@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/storage/local_storage.dart';
-import '../../../../core/di/injection_container.dart';
+import 'adult_ownership_ack_page.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -56,7 +54,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextButton(
-                  onPressed: _completeOnboarding,
+                  onPressed: _goToAcknowledgment,
                   child: Text(
                     'Skip',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -111,7 +109,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: _currentIndex == _items.length - 1
-                          ? _completeOnboarding
+                          ? _goToAcknowledgment
                           : _nextPage,
                       child: Text(_currentIndex == _items.length - 1
                           ? 'Get Started'
@@ -228,13 +226,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
     );
   }
 
-  void _completeOnboarding() async {
-    final localStorage = getIt<LocalStorage>();
-    await localStorage.setBool(LocalStorage.keyOnboardingCompleted, true);
-    
-    if (mounted) {
-      context.go('/login');
-    }
+  /// Routes to the mandatory parent/teacher ownership acknowledgment.
+  ///
+  /// Both "Skip" and the final "Get Started" funnel through here, so the
+  /// age-gate cannot be bypassed even when the carousel is skipped. The
+  /// onboarding-completed + adult-ownership flags are persisted there, not
+  /// here, ensuring onboarding only completes after acknowledgment.
+  void _goToAcknowledgment() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const AdultOwnershipAckPage(),
+      ),
+    );
   }
 
   @override

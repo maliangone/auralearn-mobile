@@ -3,7 +3,33 @@ import 'package:flutter/services.dart';
 import 'dart:io';
 
 import '../../../../core/theme/app_theme.dart';
-import '../pages/question_page.dart';
+
+/// Legacy chat-message model.
+///
+/// Phase A0: the question screen moved to the streaming solve flow and no
+/// longer renders chat bubbles, but this widget + model are kept compiling for
+/// any remaining legacy/text callers. Previously declared in `question_page.dart`.
+class ChatMessage {
+  final String id;
+  final String content;
+  final bool isUser;
+  final DateTime timestamp;
+  final List<Map<String, dynamic>>? images;
+  final String? explanation;
+  final String? subject;
+  final bool isLoading;
+
+  ChatMessage({
+    required this.id,
+    required this.content,
+    required this.isUser,
+    required this.timestamp,
+    this.images,
+    this.explanation,
+    this.subject,
+    this.isLoading = false,
+  });
+}
 
 class ChatMessageWidget extends StatelessWidget {
   final ChatMessage message;

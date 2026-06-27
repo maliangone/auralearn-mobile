@@ -39,6 +39,7 @@ class HistoryItemModel extends HistoryItem {
     required super.createdAt,
     required super.updatedAt,
     super.metadata,
+    super.tags = const [],
   });
 
   factory HistoryItemModel.fromJson(Map<String, dynamic> json) =>
@@ -59,6 +60,7 @@ class HistoryItemModel extends HistoryItem {
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       metadata: entity.metadata,
+      tags: entity.tags,
     );
   }
 
@@ -75,6 +77,7 @@ class HistoryItemModel extends HistoryItem {
       createdAt: createdAt,
       updatedAt: updatedAt,
       metadata: metadata,
+      tags: tags,
     );
   }
 } 

@@ -6,7 +6,6 @@ import '../../features/auth/data/models/register_request.dart';
 import '../../features/auth/data/models/auth_response.dart';
 import '../../features/question/data/models/question_request.dart';
 import '../../features/question/data/models/question_response.dart';
-import '../../features/history/data/models/history_response.dart';
 import '../../features/subscription/data/models/subscription_response.dart';
 
 part 'api_client.g.dart';
@@ -40,19 +39,7 @@ abstract class ApiClient {
   @MultiPart()
   Future<dynamic> uploadImages(@Part() List<MultipartFile> images);
 
-  // History endpoints
-  @GET('/history')
-  Future<HistoryResponse> getHistory(
-    @Query('page') int page,
-    @Query('limit') int limit,
-    @Query('subject') String? subject,
-  );
-
-  @DELETE('/history/{id}')
-  Future<void> deleteHistoryItem(@Path('id') String id);
-
-  @DELETE('/history')
-  Future<void> clearHistory();
+  // History is now 100% local-first (Drift); remote history endpoints removed.
 
   // Subscription endpoints
   @GET('/subscription/status')

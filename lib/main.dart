@@ -7,8 +7,10 @@ import 'package:go_router/go_router.dart';
 import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/injection_container.dart';
+import 'core/i18n/locale_cubit.dart';
 import 'core/router/app_router.dart';
 import 'core/utils/logger.dart';
+import 'l10n/app_localizations.dart';
 
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
@@ -65,20 +67,30 @@ class AuraLearnApp extends StatelessWidget {
         BlocProvider<HistoryBloc>(
           create: (context) => getIt<HistoryBloc>(),
         ),
+        BlocProvider<LocaleCubit>(
+          create: (context) => getIt<LocaleCubit>(),
+        ),
       ],
-      child: MaterialApp.router(
-        title: AppConfig.appName,
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.light,
-        routerConfig: AppRouter.router,
-        builder: (context, child) {
-          return MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaleFactor: 1.0, // Disable user text scaling
-            ),
-            child: child!,
+      child: BlocBuilder<LocaleCubit, Locale?>(
+        builder: (context, locale) {
+          return MaterialApp.router(
+            title: AppConfig.appName,
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.light,
+            locale: locale, // null = follow system
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: AppRouter.router,
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaleFactor: 1.0, // Disable user text scaling
+                ),
+                child: child!,
+              );
+            },
           );
         },
       ),

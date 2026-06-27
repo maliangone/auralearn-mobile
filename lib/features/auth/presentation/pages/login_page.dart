@@ -79,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 24),
                             Text(
-                              'Welcome Back',
+                              '欢迎回来',
                               style: Theme.of(context)
                                   .textTheme
                                   .displaySmall
@@ -90,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Sign in to continue learning',
+                              '登录以继续学习',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyLarge
@@ -213,7 +213,7 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 24),
 
-                      // OAuth buttons
+                      // OAuth buttons (third-party sign-in)
                       OAuthButton.google(
                         onPressed: () {
                           context
@@ -224,17 +224,29 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 12),
 
-                      if (Platform.isIOS)
-                        OAuthButton.apple(
-                          onPressed: () {
-                            context
-                                .read<AuthBloc>()
-                                .add(AuthAppleSignInRequested());
-                          },
+                      // Apple sign-in: native on iOS; shown elsewhere with a
+                      // note since the Android/Web flow needs extra config.
+                      OAuthButton.apple(
+                        onPressed: () {
+                          context
+                              .read<AuthBloc>()
+                              .add(AuthAppleSignInRequested());
+                        },
+                      ),
+
+                      if (!Platform.isIOS)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            'Apple 登录在 iOS 设备上体验最佳',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: AppTheme.textSecondary),
+                          ),
                         ),
 
-                      if (Platform.isIOS) const SizedBox(height: 24),
-                      if (!Platform.isIOS) const SizedBox(height: 12),
+                      const SizedBox(height: 24),
 
                       // Sign up link
                       Center(

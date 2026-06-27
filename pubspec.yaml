@@ -12,6 +12,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # UI & Navigation
   cupertino_icons: ^1.0.2
@@ -45,20 +47,35 @@ dependencies:
   hive_flutter: ^1.1.0
   sqflite: ^2.3.0
 
+  # Local-first DB (Drift) — authoritative store
+  drift: ^2.14.0
+  sqlite3_flutter_libs: ^0.5.18
+  path: ^1.8.3
+
   # Authentication
   jwt_decoder: ^2.0.1
   crypto: ^3.0.3
+  flutter_secure_storage: ^9.2.2
+
+  # OAuth sign-in (Phase C) — packages build now; real sign-in needs
+  # platform/user OAuth client config (google-services / Apple capability).
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.3
 
   # File Handling
   path_provider: ^2.1.1
   permission_handler: ^11.0.1
+  # Document/image picking (Phase C document import).
+  file_picker: ^8.1.6
+  # Pure-Dart PDF text extraction (PdfTextExtractor) for context-stuffing.
+  syncfusion_flutter_pdf: ^28.1.33
 
   # In-App Purchase
   in_app_purchase: ^3.1.11
 
   # Utils
   uuid: ^4.2.2
-  intl: ^0.19.0
+  intl: ^0.20.2
   logger: ^2.0.2+1
   connectivity_plus: ^5.0.2
   get_it: ^7.6.4
@@ -78,12 +95,14 @@ dev_dependencies:
   retrofit_generator: ^4.2.0
   json_serializable: ^6.7.1
   hive_generator: ^2.0.1
+  drift_dev: ^2.14.0
 
   # Linting
   flutter_lints: ^3.0.0
 
 flutter:
   uses-material-design: true
+  generate: true
 
   assets:
     - assets/images/

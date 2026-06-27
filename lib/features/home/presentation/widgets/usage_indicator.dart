@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
-import '../../../subscription/presentation/bloc/subscription_bloc.dart';
 
 class UsageIndicator extends StatelessWidget {
   const UsageIndicator({super.key});

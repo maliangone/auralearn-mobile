@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 
+import '../../../../core/theme/tokens.dart';
+
 class OAuthButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String text;
@@ -24,37 +26,40 @@ class OAuthButton extends StatelessWidget {
   }) {
     return OAuthButton(
       onPressed: onPressed,
-      text: 'Continue with Google',
+      text: '使用 Google 登录',
       icon: Image.asset(
         'assets/icons/google.png',
         width: 20,
         height: 20,
         errorBuilder: (context, error, stackTrace) => const Icon(
           Icons.g_mobiledata,
-          size: 20,
-          color: Colors.red,
+          size: 22,
+          color: Color(0xFFDB4437),
         ),
       ),
-      backgroundColor: Colors.white,
-      textColor: Colors.black87,
-      borderColor: Colors.grey.shade300,
+      backgroundColor: AppColors.surface,
+      textColor: AppColors.textPrimary,
+      borderColor: AppColors.border,
     );
   }
 
   factory OAuthButton.apple({
     required VoidCallback onPressed,
   }) {
+    // On iOS use Apple's canonical black button; elsewhere use a light,
+    // token-styled variant (web flow / "coming soon" note shown by caller).
+    final onIOS = Platform.isIOS;
     return OAuthButton(
       onPressed: onPressed,
-      text: 'Continue with Apple',
+      text: '使用 Apple 登录',
       icon: Icon(
         Icons.apple,
-        size: 20,
-        color: Platform.isIOS ? Colors.white : Colors.black,
+        size: 22,
+        color: onIOS ? AppColors.textOnPrimary : AppColors.textPrimary,
       ),
-      backgroundColor: Platform.isIOS ? Colors.black : Colors.white,
-      textColor: Platform.isIOS ? Colors.white : Colors.black,
-      borderColor: Platform.isIOS ? Colors.black : Colors.grey.shade300,
+      backgroundColor: onIOS ? AppColors.textPrimary : AppColors.surface,
+      textColor: onIOS ? AppColors.textOnPrimary : AppColors.textPrimary,
+      borderColor: onIOS ? AppColors.textPrimary : AppColors.border,
     );
   }
 
@@ -62,33 +67,33 @@ class OAuthButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 50,
+      height: 52,
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
+        color: backgroundColor ?? AppColors.surface,
         border: Border.all(
-          color: borderColor ?? Colors.grey.shade300,
+          color: borderColor ?? AppColors.border,
           width: 1.5,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: const BorderRadius.all(AppRadius.rMd),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: const BorderRadius.all(AppRadius.rMd),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 icon,
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Text(
                   text,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: textColor ?? Colors.black87,
+                    color: textColor ?? AppColors.textPrimary,
                   ),
                 ),
               ],

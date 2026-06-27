@@ -1,4 +1,5 @@
 import '../../../../core/storage/local_storage.dart';
+import '../../../../core/storage/secure_token_store.dart';
 import '../models/auth_response.dart';
 import '../models/user_model.dart';
 import 'dart:convert';
@@ -14,13 +15,17 @@ abstract class AuthLocalDataSource {
 
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   final LocalStorage _localStorage;
+  final SecureTokenStore _tokenStore;
 
-  AuthLocalDataSourceImpl(this._localStorage);
+  AuthLocalDataSourceImpl(this._localStorage, this._tokenStore);
 
   @override
   Future<void> saveAuthData(AuthResponse authResponse) async {
-    await _localStorage.setString(LocalStorage.keyAccessToken, authResponse.accessToken);
-    await _localStorage.setString(LocalStorage.keyRefreshToken, authResponse.refreshToken);
+    // Sensitive tokens go to secure storage.
+    await _tokenStore.saveTokens(
+      access: authResponse.accessToken,
+      refresh: authResponse.refreshToken,
+    );
     await _localStorage.setString(LocalStorage.keyUserId, authResponse.user.id);
     await _localStorage.setString(LocalStorage.keyUserEmail, authResponse.user.email);
     
@@ -35,12 +40,12 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
 
   @override
   Future<String?> getAccessToken() async {
-    return _localStorage.getString(LocalStorage.keyAccessToken);
+    return _tokenStore.getAccessToken();
   }
 
   @override
   Future<String?> getRefreshToken() async {
-    return _localStorage.getString(LocalStorage.keyRefreshToken);
+    return _tokenStore.getRefreshToken();
   }
 
   @override
@@ -60,8 +65,8 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
 
   @override
   Future<void> clearAuthData() async {
-    await _localStorage.remove(LocalStorage.keyAccessToken);
-    await _localStorage.remove(LocalStorage.keyRefreshToken);
+    // Clear sensitive tokens from secure storage.
+    await _tokenStore.clear();
     await _localStorage.remove(LocalStorage.keyUserId);
     await _localStorage.remove(LocalStorage.keyUserEmail);
     await _localStorage.remove('user_data');

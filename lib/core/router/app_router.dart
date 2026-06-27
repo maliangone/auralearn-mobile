@@ -1,6 +1,9 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../di/injection_container.dart';
+import '../../l10n/app_localizations.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
@@ -12,10 +15,20 @@ import '../../features/history/presentation/pages/history_page.dart';
 import '../../features/history/presentation/pages/history_detail_page.dart';
 import '../../features/subscription/presentation/pages/subscription_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/flashcards/presentation/bloc/review_bloc.dart';
+import '../../features/flashcards/presentation/bloc/error_book_bloc.dart';
+import '../../features/flashcards/presentation/pages/review_session_page.dart';
+import '../../features/flashcards/presentation/pages/error_book_page.dart';
+import '../../features/documents/domain/entities/document.dart';
+import '../../features/documents/presentation/bloc/documents_bloc.dart';
+import '../../features/documents/presentation/pages/documents_list_page.dart';
+import '../../features/documents/presentation/pages/document_chat_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: '/onboarding',
+    // Phase A0: home is the camera-first home page.
+    // Switch back to '/onboarding' once the auth/onboarding flow is wired.
+    initialLocation: '/home',
     routes: [
       // Onboarding
       GoRoute(
@@ -79,7 +92,11 @@ class AppRouter {
       GoRoute(
         path: '/question',
         name: 'question',
-        builder: (context, state) => const QuestionPage(),
+        builder: (context, state) {
+          // Crop page hands off { images: [...], hasImages: true } via extra.
+          final initialData = state.extra as Map<String, dynamic>?;
+          return QuestionPage(initialData: initialData);
+        },
       ),
       GoRoute(
         path: '/camera',
@@ -92,6 +109,42 @@ class AppRouter {
         builder: (context, state) {
           final images = state.extra as List<String>?;
           return CropPage(imagePaths: images ?? []);
+        },
+      ),
+
+      // Flashcards / 错题本 (fullscreen)
+      GoRoute(
+        path: '/flashcards/review',
+        name: 'flashcard-review',
+        builder: (context, state) => BlocProvider(
+          create: (_) => getIt<ReviewBloc>(),
+          child: const ReviewSessionPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/flashcards/errorbook',
+        name: 'errorbook',
+        builder: (context, state) => BlocProvider(
+          create: (_) => getIt<ErrorBookBloc>(),
+          child: const ErrorBookPage(),
+        ),
+      ),
+
+      // 我的资料 / document import (fullscreen, Phase C)
+      GoRoute(
+        path: '/documents',
+        name: 'documents',
+        builder: (context, state) => BlocProvider(
+          create: (_) => getIt<DocumentsBloc>(),
+          child: const DocumentsListPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/documents/ask',
+        name: 'document-ask',
+        builder: (context, state) {
+          final doc = state.extra as Document;
+          return DocumentChatPage(document: doc);
         },
       ),
     ],
@@ -113,41 +166,36 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       body: widget.child,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            activeIcon: const Icon(Icons.home),
+            label: l.navHome,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'History',
+            icon: const Icon(Icons.history_outlined),
+            activeIcon: const Icon(Icons.history),
+            label: l.navHistory,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.workspace_premium_outlined),
-            activeIcon: Icon(Icons.workspace_premium),
-            label: 'Subscription',
+            icon: const Icon(Icons.workspace_premium_outlined),
+            activeIcon: const Icon(Icons.workspace_premium),
+            label: l.navMember,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
+            icon: const Icon(Icons.person_outline),
+            activeIcon: const Icon(Icons.person),
+            label: l.navProfile,
           ),
         ],
       ),
-      floatingActionButton: _currentIndex == 0
-          ? FloatingActionButton(
-              onPressed: () => context.go('/question'),
-              child: const Icon(Icons.add),
-            )
-          : null,
     );
   }
 

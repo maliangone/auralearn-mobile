@@ -234,3 +234,6 @@ key.properties
 # Test coverage
 coverage/
 *.lcov
+
+# OMC operational artifacts (specs/plans/handoffs/state) — kept local, not tracked
+.omc/
