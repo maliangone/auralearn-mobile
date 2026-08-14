@@ -48,4 +48,49 @@ class HistoryFilterChanged extends HistoryEvent {
 
   @override
   List<Object?> get props => [subject];
+}
+
+// ---------------------------------------------------------------------------
+// Phase-B archive events
+// ---------------------------------------------------------------------------
+
+/// Dispatched (debounced) when the search TextField value changes.
+class HistorySearchChanged extends HistoryEvent {
+  final String query;
+
+  const HistorySearchChanged(this.query);
+
+  @override
+  List<Object?> get props => [query];
+}
+
+/// Dispatched when a subject filter chip is tapped; [subject] null means "全部".
+class HistorySubjectFilterChanged extends HistoryEvent {
+  final String? subject;
+
+  const HistorySubjectFilterChanged(this.subject);
+
+  @override
+  List<Object?> get props => [subject];
+}
+
+/// Dispatched after the tag-edit dialog confirms; replaces all tags for [id].
+class HistoryTagsEdited extends HistoryEvent {
+  final String id;
+  final List<String> tags;
+
+  const HistoryTagsEdited({required this.id, required this.tags});
+
+  @override
+  List<Object?> get props => [id, tags];
+}
+
+/// Clears the active query and subject filter, reloading the full list.
+class HistoryFiltersCleared extends HistoryEvent {
+  const HistoryFiltersCleared();
+}
+
+/// Requests a reload of the distinct subject list (e.g. after tag/subject edit).
+class HistorySubjectsLoadRequested extends HistoryEvent {
+  const HistorySubjectsLoadRequested();
 } 

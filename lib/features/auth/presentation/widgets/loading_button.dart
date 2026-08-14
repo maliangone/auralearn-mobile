@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/tokens.dart';
 
 class LoadingButton extends StatelessWidget {
   final VoidCallback? onPressed;
@@ -29,12 +29,14 @@ class LoadingButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? AppTheme.primary,
-          foregroundColor: foregroundColor ?? Colors.white,
-          disabledBackgroundColor: (backgroundColor ?? AppTheme.primary).withOpacity(0.6),
-          disabledForegroundColor: (foregroundColor ?? Colors.white).withOpacity(0.6),
+          backgroundColor: backgroundColor ?? AppColors.primary,
+          foregroundColor: foregroundColor ?? AppColors.textOnPrimary,
+          disabledBackgroundColor: (backgroundColor ?? AppColors.primary)
+              .withValues(alpha: 0.6),
+          disabledForegroundColor: (foregroundColor ?? AppColors.textOnPrimary)
+              .withValues(alpha: 0.6),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.button),
           ),
           elevation: 0,
         ),
@@ -47,7 +49,7 @@ class LoadingButton extends StatelessWidget {
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      foregroundColor ?? Colors.white,
+                      foregroundColor ?? AppColors.textOnPrimary,
                     ),
                   ),
                 )
@@ -56,4 +58,4 @@ class LoadingButton extends StatelessWidget {
       ),
     );
   }
-} 
+}

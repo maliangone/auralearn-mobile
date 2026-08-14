@@ -113,3 +113,10 @@ key.properties
 # Symbolication
 app.*.symbols
 app.*.map.json
+
+# Test coverage
+coverage/
+*.lcov
+
+# OMC operational artifacts (specs/plans/handoffs/state) — kept local, not tracked
+.omc/

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
 
+import '../../../../core/theme/tokens.dart';
+
+/// Compact card for a recently-solved question (home + history list).
+/// Subject chip colours come from the shared token system
+/// ([AppColors.subjectFg] / [AppColors.subjectBg]).
 class RecentQuestionCard extends StatelessWidget {
   final String question;
   final String subject;
@@ -19,17 +23,19 @@ class RecentQuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final subjectFg = AppColors.subjectFg(subject);
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.base),
           decoration: BoxDecoration(
-            color: AppTheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.border),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppShadows.soft,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,87 +43,66 @@ class RecentQuestionCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
                     decoration: BoxDecoration(
-                      color: _getSubjectColor(subject).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
+                      color: AppColors.subjectBg(subject),
+                      borderRadius: BorderRadius.circular(AppRadius.chip),
                     ),
                     child: Text(
                       subject,
                       style: TextStyle(
-                        color: _getSubjectColor(subject),
+                        color: subjectFg,
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  
                   const Spacer(),
-                  
-                  if (hasImages)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppTheme.secondary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.image,
-                            size: 12,
-                            color: AppTheme.secondary,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            'IMG',
-                            style: TextStyle(
-                              color: AppTheme.secondary,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
+                  if (hasImages) ...[
+                    const Icon(
+                      Icons.image_rounded,
+                      size: 16,
+                      color: AppColors.encourage,
                     ),
-                  
-                  const SizedBox(width: 8),
-                  
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: AppTheme.textHint,
+                    const SizedBox(width: AppSpacing.sm),
+                  ],
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: AppColors.textHint,
                   ),
                 ],
               ),
-              
-              const SizedBox(height: 12),
-              
+
+              const SizedBox(height: AppSpacing.md),
+
               Text(
                 question,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textPrimary,
+                  color: AppColors.textPrimary,
                   fontWeight: FontWeight.w500,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              
-              const SizedBox(height: 8),
-              
+
+              const SizedBox(height: AppSpacing.sm),
+
               Row(
                 children: [
-                  Icon(
-                    Icons.access_time,
+                  const Icon(
+                    Icons.access_time_rounded,
                     size: 14,
-                    color: AppTheme.textHint,
+                    color: AppColors.textHint,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSpacing.xs),
                   Text(
                     time,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondary,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -128,33 +113,4 @@ class RecentQuestionCard extends StatelessWidget {
       ),
     );
   }
-
-  Color _getSubjectColor(String subject) {
-    switch (subject.toLowerCase()) {
-      case 'mathematics':
-      case 'math':
-      case 'algebra':
-      case 'geometry':
-      case 'calculus':
-        return const Color(0xFF2563EB); // Blue
-      case 'physics':
-        return const Color(0xFF7C3AED); // Purple
-      case 'chemistry':
-        return const Color(0xFF059669); // Green
-      case 'biology':
-        return const Color(0xFFDC2626); // Red
-      case 'english':
-      case 'literature':
-        return const Color(0xFFEA580C); // Orange
-      case 'history':
-        return const Color(0xFF7C2D12); // Brown
-      case 'geography':
-        return const Color(0xFF0891B2); // Teal
-      case 'computer science':
-      case 'programming':
-        return const Color(0xFF4338CA); // Indigo
-      default:
-        return AppTheme.primary;
-    }
-  }
-} 
+}

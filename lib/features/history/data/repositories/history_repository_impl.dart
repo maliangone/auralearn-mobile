@@ -1,18 +1,20 @@
 import 'package:dartz/dartz.dart';
-import 'package:dio/dio.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/history_item.dart';
 import '../../domain/repositories/history_repository.dart';
-import '../datasources/history_remote_data_source.dart';
 import '../datasources/history_local_data_source.dart';
 
+/// Local-first authoritative history repository.
+///
+/// The Drift-backed [HistoryLocalDataSource] is the single source of truth:
+/// every read is served from the local store and is offline-readable. History
+/// is fully local — there is no remote datasource (the remote history endpoints
+/// were pruned once the Drift read path was verified).
 class HistoryRepositoryImpl implements HistoryRepository {
-  final HistoryRemoteDataSource remoteDataSource;
   final HistoryLocalDataSource localDataSource;
 
   HistoryRepositoryImpl({
-    required this.remoteDataSource,
     required this.localDataSource,
   });
 
@@ -23,104 +25,93 @@ class HistoryRepositoryImpl implements HistoryRepository {
     String? subject,
   }) async {
     try {
-      final response = await remoteDataSource.getHistory(
-        page: page,
-        limit: limit,
-        subject: subject,
-      );
-      
-      // Cache the first page
-      if (page == 1) {
-        await localDataSource.cacheHistory(response.items);
-      }
-      
-      return Right(response.items.map((item) => item.toEntity()).toList());
-    } on DioError catch (e) {
-      // Try to get cached data on network error
-      if (e.type == DioErrorType.connectTimeout ||
-          e.type == DioErrorType.receiveTimeout ||
-          e.type == DioErrorType.sendTimeout) {
-        
-        if (page == 1) {
-          final cachedItems = await localDataSource.getCachedHistory();
-          if (cachedItems.isNotEmpty) {
-            return Right(cachedItems.map((item) => item.toEntity()).toList());
-          }
-        }
-        
-        return const Left(NetworkFailure('Network connection failed'));
-      } else if (e.response?.statusCode == 401) {
-        return const Left(AuthFailure('Authentication required'));
-      } else if (e.response?.statusCode != null && e.response!.statusCode! >= 500) {
-        return const Left(ServerFailure('Server error occurred'));
-      }
-      return Left(UnknownFailure(e.message));
+      final items = await localDataSource.getHistory(page: page, limit: limit);
+      final entities = items
+          .map((item) => item.toEntity())
+          .where((item) => subject == null || item.subject == subject)
+          .toList();
+      return Right(entities);
     } catch (e) {
-      return Left(UnknownFailure(e.toString()));
+      return Left(CacheFailure(e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, void>> deleteHistoryItem(String itemId) async {
     try {
-      await remoteDataSource.deleteHistoryItem(itemId);
-      
-      // Remove from cache
+      // Authoritative delete from the local store.
       await localDataSource.removeCachedHistoryItem(itemId);
-      
       return const Right(null);
-    } on DioError catch (e) {
-      if (e.type == DioErrorType.connectTimeout ||
-          e.type == DioErrorType.receiveTimeout ||
-          e.type == DioErrorType.sendTimeout) {
-        return const Left(NetworkFailure('Network connection failed'));
-      } else if (e.response?.statusCode == 401) {
-        return const Left(AuthFailure('Authentication required'));
-      } else if (e.response?.statusCode == 404) {
-        return const Left(ValidationFailure('History item not found'));
-      }
-      return Left(UnknownFailure(e.message));
     } catch (e) {
-      return Left(UnknownFailure(e.toString()));
+      return Left(CacheFailure(e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, void>> clearHistory() async {
     try {
-      await remoteDataSource.clearHistory();
-      
-      // Clear cache
+      // Authoritative clear of the local store.
       await localDataSource.clearCache();
-      
       return const Right(null);
-    } on DioError catch (e) {
-      if (e.type == DioErrorType.connectTimeout ||
-          e.type == DioErrorType.receiveTimeout ||
-          e.type == DioErrorType.sendTimeout) {
-        return const Left(NetworkFailure('Network connection failed'));
-      } else if (e.response?.statusCode == 401) {
-        return const Left(AuthFailure('Authentication required'));
-      }
-      return Left(UnknownFailure(e.message));
     } catch (e) {
-      return Left(UnknownFailure(e.toString()));
+      return Left(CacheFailure(e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, HistoryItem?>> getHistoryItem(String itemId) async {
     try {
-      // First try to get from cache
       final cachedItem = await localDataSource.getCachedHistoryItem(itemId);
-      if (cachedItem != null) {
-        return Right(cachedItem.toEntity());
-      }
-      
-      // If not in cache, could fetch from remote (not implemented in current API)
+      return Right(cachedItem?.toEntity());
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase-B archive extensions
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Either<Failure, List<HistoryItem>>> search({
+    String? query,
+    String? subject,
+  }) async {
+    try {
+      final items = await localDataSource.search(query: query, subject: subject);
+      return Right(items.map((m) => m.toEntity()).toList());
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<String>>> getSubjects() async {
+    try {
+      final subjects = await localDataSource.getSubjects();
+      return Right(subjects);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> setTags(String id, List<String> tags) async {
+    try {
+      await localDataSource.setTags(id, tags);
       return const Right(null);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
     }
   }
-} 
+
+  @override
+  Future<Either<Failure, void>> setSubject(String id, String? subject) async {
+    try {
+      await localDataSource.setSubject(id, subject);
+      return const Right(null);
+    } catch (e) {
+      return Left(CacheFailure(e.toString()));
+    }
+  }
+}

@@ -3,30 +3,26 @@ class AppConfig {
   static const String appVersion = '1.0.0';
 
   // API Endpoints
-  static const String baseUrl = String.fromEnvironment(
-    'BASE_URL',
-    defaultValue: 'http://localhost:3000/api',
+  //
+  // Phase A0: the old per-service localhost URLs (auth/image/lm-gateway/
+  // billing) are removed in favor of a single stateless streaming proxy plus a
+  // separate accounts service. Android emulator reaches the host via 10.0.2.2.
+  //
+  // - proxyBaseUrl    -> SSE `/solve` streaming proxy (see SolveClient).
+  // - accountsBaseUrl -> auth / accounts / metering service.
+  static const String proxyBaseUrl = String.fromEnvironment(
+    'PROXY_URL',
+    defaultValue: 'http://10.0.2.2:8787',
   );
 
-  static const String authServiceUrl = String.fromEnvironment(
-    'AUTH_SERVICE_URL',
-    defaultValue: 'http://localhost:3001/api',
+  static const String accountsBaseUrl = String.fromEnvironment(
+    'ACCOUNTS_URL',
+    defaultValue: 'http://10.0.2.2:8788',
   );
 
-  static const String imageServiceUrl = String.fromEnvironment(
-    'IMAGE_SERVICE_URL',
-    defaultValue: 'http://localhost:3002/api',
-  );
-
-  static const String lmGatewayUrl = String.fromEnvironment(
-    'LM_GATEWAY_URL',
-    defaultValue: 'http://localhost:3003/api',
-  );
-
-  static const String billingServiceUrl = String.fromEnvironment(
-    'BILLING_SERVICE_URL',
-    defaultValue: 'http://localhost:3005/api',
-  );
+  /// Compatibility alias for legacy callers (e.g. dio/Retrofit DI wiring).
+  /// Points at the proxy; remove once all callers migrate off `baseUrl`.
+  static String get baseUrl => proxyBaseUrl;
 
   // Feature Flags
   static const bool enableAnalytics = bool.fromEnvironment(
@@ -50,21 +46,40 @@ class AppConfig {
   static const int historyAutoDeleteDays = 30;
   static const int responseTimeoutSeconds = 30;
 
-  // Subscription Plans
+  // Subscription Plans (Phase C: store-billed IAP, two tiers).
+  //
+  // The old three-tier Stripe model (free/standard/pro with metered quotas and
+  // overage rates) is gone. Billing is now a single non-consumable monthly
+  // subscription validated through the store + proxy `/billing/*` endpoints.
+  //
+  // NOTE: the real price and localized display string are configured in
+  // App Store Connect (iOS) and Google Play Console (Android) against the
+  // [proProductId] below — the app never hardcodes a price. The store returns
+  // the price via `ProductDetails.price`.
+
+  /// Free tier: questions allowed per calendar day before an upgrade is needed.
+  static const int freeDailyQuota = 3;
+
+  /// Store product identifier for the Pro monthly subscription. Must match the
+  /// product id created in App Store Connect / Google Play Console.
+  static const String proProductId = 'auralearn_pro_monthly';
+
+  // --- Backwards-compatibility shims -------------------------------------
+  // Older callers referenced `subscriptionLimits` / `subscriptionPrices`.
+  // These map onto the new two-tier (free/paid) model so nothing breaks while
+  // the rest of the app migrates. Prefer [freeDailyQuota] / store-supplied
+  // prices in new code.
+  @Deprecated('Use freeDailyQuota; paid tier has no fixed client-side quota.')
   static const Map<String, int> subscriptionLimits = {
-    'free': 10,
-    'standard': 100,
-    'pro': 500,
+    'free': freeDailyQuota,
+    'paid': -1, // -1 == effectively unlimited / not client-enforced
   };
 
+  @Deprecated('Price comes from the store (ProductDetails.price), not the app.')
   static const Map<String, double> subscriptionPrices = {
     'free': 0.0,
-    'standard': 19.99,
-    'pro': 39.99,
+    'paid': 0.0, // real price configured in the store, fetched at runtime
   };
-
-  static const double overageRateStandard = 0.3;
-  static const double overageRatePro = 0.2;
 
   // Image Processing
   static const int maxImageWidth = 2048;

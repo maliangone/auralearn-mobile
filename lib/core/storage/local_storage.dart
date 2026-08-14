@@ -161,6 +161,7 @@ class LocalStorage {
   static const String keyUsageCount = 'usage_count';
   static const String keyLastResetDate = 'last_reset_date';
   static const String keyOnboardingCompleted = 'onboarding_completed';
+  static const String keyAdultOwnershipAck = 'adult_ownership_ack';
   static const String keyThemeMode = 'theme_mode';
   static const String keyLanguageCode = 'language_code';
 } 

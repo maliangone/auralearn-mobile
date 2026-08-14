@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="questionBubble" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#EEF1FE" />
+    </linearGradient>
+    <linearGradient id="questionPencil" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#607CF8" />
+      <stop offset="1" stop-color="#3A54D4" />
+    </linearGradient>
+    <filter id="questionShadow" x="-20%" y="-80%" width="140%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+  </defs>
+
+  <ellipse cx="202" cy="325" rx="128" ry="16" fill="#3A54D4" opacity="0.17" filter="url(#questionShadow)" />
+
+  <path
+    d="M119 216 C101 216 87 204 87 187 C87 170 99 157 115 155 C115 136 130 120 149 120 C157 102 174 91 194 91 C215 91 232 103 239 120 C245 116 252 114 260 114 C280 114 296 128 299 147 C311 150 320 160 320 174 C320 192 305 207 287 207 H148 C138 214 129 216 119 216 Z"
+    fill="url(#questionBubble)"
+    stroke="#4F6EF7"
+    stroke-width="8"
+    stroke-linejoin="round"
+  />
+  <path d="M135 119 C157 101 190 98 214 111" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" opacity="0.85" />
+
+  <g fill="none" stroke="#4F6EF7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M126 145 H162" />
+    <path d="M135 145 C135 156 133 167 131 176" />
+    <path d="M153 145 V176" />
+  </g>
+  <path d="M251 147 H281" fill="none" stroke="#7C3AED" stroke-width="7" stroke-linecap="round" />
+  <circle cx="258" cy="137" r="5" fill="#7C3AED" />
+  <circle cx="274" cy="159" r="5" fill="#7C3AED" />
+
+  <g fill="none" stroke="#22C55E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M208 174 L231 198" />
+    <path d="M231 174 L208 198" />
+    <path d="M241 164 C241 158 246 154 252 154 C259 154 263 158 263 164 C263 169 260 172 256 175 C252 178 251 180 251 183" />
+  </g>
+  <circle cx="251" cy="191" r="3.5" fill="#22C55E" />
+
+  <g transform="rotate(38 205 220)">
+    <path d="M190 277 L205 309 L220 277 Z" fill="#F4D3A2" stroke="#C99758" stroke-width="5" stroke-linejoin="round" />
+    <path d="M200 296 L205 309 L210 296 Z" fill="#3A54D4" />
+    <rect x="190" y="137" width="30" height="145" rx="11" fill="url(#questionPencil)" stroke="#3A54D4" stroke-width="6" />
+    <path d="M198 145 V272" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity="0.3" />
+    <rect x="190" y="123" width="30" height="28" rx="9" fill="#F59E0B" stroke="#D98200" stroke-width="5" />
+    <path d="M196 130 C203 126 211 127 216 131" fill="none" stroke="#FFE3A3" stroke-width="5" stroke-linecap="round" opacity="0.75" />
+  </g>
+
+  <circle cx="91" cy="236" r="12" fill="#EEF1FE" stroke="#4F6EF7" stroke-width="6" />
+  <circle cx="70" cy="261" r="8" fill="#EEF1FE" stroke="#9AA5CE" stroke-width="5" />
+  <circle cx="54" cy="282" r="5" fill="#9AA5CE" opacity="0.78" />
+  <path
+    d="M333 224 C335 231 338 234 345 236 C338 238 335 241 333 248 C331 241 328 238 321 236 C328 234 331 231 333 224 Z"
+    fill="#F59E0B"
+    stroke="#FFC85A"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+</svg>

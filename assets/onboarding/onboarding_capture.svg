@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="capturePhone" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#607CF8" />
+      <stop offset="1" stop-color="#3A54D4" />
+    </linearGradient>
+    <linearGradient id="captureScreen" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#EEF1FE" />
+    </linearGradient>
+    <filter id="captureShadow" x="-20%" y="-80%" width="140%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+  </defs>
+
+  <ellipse cx="205" cy="328" rx="130" ry="16" fill="#3A54D4" opacity="0.18" filter="url(#captureShadow)" />
+
+  <path
+    d="M252 171 C269 165 284 173 289 188 L305 247 C309 262 300 277 285 281 L263 286 L238 250 L252 225 Z"
+    fill="#D8E1FF"
+    stroke="#3A54D4"
+    stroke-width="8"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M107 329 C106 309 111 291 123 273 L151 231 C157 222 167 221 174 227 C181 233 181 241 176 250 L165 270 L184 240 C189 232 199 230 206 235 C213 240 214 249 209 257 L193 281 L213 257 C219 250 229 251 235 257 C241 263 240 272 235 279 L221 299 L237 283 C244 277 254 279 259 286 C267 296 262 310 252 319 L237 332 H133 C119 332 110 331 107 329 Z"
+    fill="#EEF1FE"
+    stroke="#3A54D4"
+    stroke-width="8"
+    stroke-linejoin="round"
+  />
+
+  <g transform="rotate(-4 200 185)">
+    <rect x="115" y="64" width="170" height="244" rx="31" fill="#334BC1" opacity="0.34" transform="translate(5 7)" />
+    <rect x="115" y="64" width="170" height="244" rx="31" fill="url(#capturePhone)" stroke="#3A54D4" stroke-width="8" />
+    <path d="M141 81 C169 69 231 69 259 81" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" opacity="0.22" />
+    <rect x="128" y="91" width="144" height="184" rx="20" fill="url(#captureScreen)" stroke="#D8E1FF" stroke-width="6" />
+    <rect x="181" y="76" width="39" height="9" rx="4.5" fill="#3A54D4" opacity="0.88" />
+    <circle cx="237" cy="80" r="5" fill="#EEF1FE" opacity="0.85" />
+
+    <rect x="151" y="124" width="98" height="119" rx="15" fill="#FFFFFF" stroke="#D8E1FF" stroke-width="6" />
+    <path d="M224 125 V146 C224 153 229 158 236 158 H249" fill="#D8E1FF" stroke="#D8E1FF" stroke-width="5" stroke-linejoin="round" />
+    <path d="M166 171 H224" fill="none" stroke="#C5D0FF" stroke-width="7" stroke-linecap="round" />
+    <path d="M166 192 H231" fill="none" stroke="#D8E1FF" stroke-width="7" stroke-linecap="round" />
+    <path d="M166 213 H207" fill="none" stroke="#D8E1FF" stroke-width="7" stroke-linecap="round" />
+    <circle cx="189" cy="145" r="12" fill="#EEF1FE" stroke="#7C3AED" stroke-width="5" />
+    <path d="M185 145 L189 149 L195 140" fill="none" stroke="#7C3AED" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+
+    <path d="M143 151 V140 H155" fill="none" stroke="#22C55E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M245 140 H257 V151" fill="none" stroke="#22C55E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M143 216 V227 H155" fill="none" stroke="#22C55E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M245 227 H257 V216" fill="none" stroke="#22C55E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+
+    <circle cx="200" cy="291" r="14" fill="#F59E0B" stroke="#FFFFFF" stroke-width="6" />
+    <circle cx="200" cy="291" r="5" fill="#FFE3A3" />
+    <path d="M181 302 H219" fill="none" stroke="#C5D0FF" stroke-width="5" stroke-linecap="round" opacity="0.85" />
+  </g>
+
+  <path
+    d="M254 243 C266 243 275 250 275 261 C275 271 267 278 256 281 L231 287 C221 290 214 284 212 276 C210 267 216 260 225 258 L245 253 C248 247 251 244 254 243 Z"
+    fill="#EEF1FE"
+    stroke="#3A54D4"
+    stroke-width="7"
+    stroke-linejoin="round"
+  />
+  <path d="M232 280 C241 278 249 276 258 273" fill="none" stroke="#C5D0FF" stroke-width="6" stroke-linecap="round" opacity="0.85" />
+
+  <path
+    d="M78 118 C80 125 83 128 90 130 C83 132 80 135 78 142 C76 135 73 132 66 130 C73 128 76 125 78 118 Z"
+    fill="#F59E0B"
+    stroke="#FFC85A"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+  <circle cx="327" cy="121" r="7" fill="#22C55E" opacity="0.8" />
+</svg>

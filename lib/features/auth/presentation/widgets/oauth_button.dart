@@ -1,94 +1,111 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 
+import '../../../../core/theme/tokens.dart';
+import '../../../../l10n/app_localizations.dart';
+
+enum _OAuthProvider { google, apple }
+
 class OAuthButton extends StatelessWidget {
+  /// Google brand red — used only for the fallback glyph when the Google
+  /// logo asset is unavailable. Not a theme token (third-party brand color).
+  static const Color _googleBrandRed = Color(0xFFDB4437);
+
   final VoidCallback onPressed;
-  final String text;
   final Widget icon;
   final Color? backgroundColor;
   final Color? textColor;
   final Color? borderColor;
+  final _OAuthProvider _provider;
 
-  const OAuthButton({
-    super.key,
+  const OAuthButton._({
     required this.onPressed,
-    required this.text,
     required this.icon,
+    required _OAuthProvider provider,
     this.backgroundColor,
     this.textColor,
     this.borderColor,
-  });
+  }) : _provider = provider;
 
   factory OAuthButton.google({
     required VoidCallback onPressed,
   }) {
-    return OAuthButton(
+    return OAuthButton._(
       onPressed: onPressed,
-      text: 'Continue with Google',
+      provider: _OAuthProvider.google,
       icon: Image.asset(
         'assets/icons/google.png',
         width: 20,
         height: 20,
         errorBuilder: (context, error, stackTrace) => const Icon(
           Icons.g_mobiledata,
-          size: 20,
-          color: Colors.red,
+          size: 22,
+          color: OAuthButton._googleBrandRed,
         ),
       ),
-      backgroundColor: Colors.white,
-      textColor: Colors.black87,
-      borderColor: Colors.grey.shade300,
+      backgroundColor: AppColors.surface,
+      textColor: AppColors.textPrimary,
+      borderColor: AppColors.border,
     );
   }
 
   factory OAuthButton.apple({
     required VoidCallback onPressed,
   }) {
-    return OAuthButton(
+    // On iOS use Apple's canonical black button; elsewhere use a light,
+    // token-styled variant (web flow / "coming soon" note shown by caller).
+    final onIOS = Platform.isIOS;
+    return OAuthButton._(
       onPressed: onPressed,
-      text: 'Continue with Apple',
+      provider: _OAuthProvider.apple,
       icon: Icon(
         Icons.apple,
-        size: 20,
-        color: Platform.isIOS ? Colors.white : Colors.black,
+        size: 22,
+        color: onIOS ? AppColors.textOnPrimary : AppColors.textPrimary,
       ),
-      backgroundColor: Platform.isIOS ? Colors.black : Colors.white,
-      textColor: Platform.isIOS ? Colors.white : Colors.black,
-      borderColor: Platform.isIOS ? Colors.black : Colors.grey.shade300,
+      backgroundColor: onIOS ? AppColors.textPrimary : AppColors.surface,
+      textColor: onIOS ? AppColors.textOnPrimary : AppColors.textPrimary,
+      borderColor: onIOS ? AppColors.textPrimary : AppColors.border,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final text = switch (_provider) {
+      _OAuthProvider.google => l.authSignInWithGoogle,
+      _OAuthProvider.apple => l.authSignInWithApple,
+    };
+
     return Container(
       width: double.infinity,
-      height: 50,
+      height: 52,
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
+        color: backgroundColor ?? AppColors.surface,
         border: Border.all(
-          color: borderColor ?? Colors.grey.shade300,
+          color: borderColor ?? AppColors.border,
           width: 1.5,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: const BorderRadius.all(AppRadius.rButton),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: const BorderRadius.all(AppRadius.rButton),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 icon,
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Text(
                   text,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: textColor ?? Colors.black87,
+                    color: textColor ?? AppColors.textPrimary,
                   ),
                 ),
               ],

@@ -7,30 +7,24 @@ abstract class SubscriptionEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class SubscriptionStatusRequested extends SubscriptionEvent {}
-
-class SubscriptionPurchaseRequested extends SubscriptionEvent {
-  final String plan;
-  final Map<String, dynamic> purchaseData;
-
-  const SubscriptionPurchaseRequested({
-    required this.plan,
-    required this.purchaseData,
-  });
-
-  @override
-  List<Object?> get props => [plan, purchaseData];
+/// Load the current billing status from the proxy (called on page open + retry).
+class LoadStatus extends SubscriptionEvent {
+  const LoadStatus();
 }
 
-class SubscriptionCancelRequested extends SubscriptionEvent {}
+/// User tapped "升级 Pro" — start the store purchase flow.
+class BuyRequested extends SubscriptionEvent {
+  const BuyRequested();
+}
 
-class SubscriptionRestoreRequested extends SubscriptionEvent {}
+/// User tapped "恢复购买" — restore prior store purchases.
+class RestoreRequested extends SubscriptionEvent {
+  const RestoreRequested();
+}
 
-class UsageUpdated extends SubscriptionEvent {
-  final int newUsageCount;
-
-  const UsageUpdated({required this.newUsageCount});
-
-  @override
-  List<Object?> get props => [newUsageCount];
-} 
+/// Backwards-compatibility alias for out-of-lane callers (e.g. home_page)
+/// that still dispatch the legacy "请求订阅状态" event. Handled identically to
+/// [LoadStatus]. Prefer [LoadStatus] in new code.
+class SubscriptionStatusRequested extends LoadStatus {
+  const SubscriptionStatusRequested();
+}

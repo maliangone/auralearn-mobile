@@ -1,21 +1,21 @@
 import 'package:dio/dio.dart';
-import '../storage/local_storage.dart';
+import '../storage/secure_token_store.dart';
 import '../utils/logger.dart';
 
 class AuthInterceptor extends Interceptor {
-  final LocalStorage _localStorage;
+  final SecureTokenStore _tokenStore;
 
-  AuthInterceptor(this._localStorage);
+  AuthInterceptor(this._tokenStore);
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     // Skip auth for login/register endpoints
     if (_shouldSkipAuth(options.path)) {
       return handler.next(options);
     }
 
     // Add bearer token if available
-    final token = _localStorage.getString(LocalStorage.keyAccessToken);
+    final token = await _tokenStore.getAccessToken();
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
     }
@@ -48,19 +48,17 @@ class AuthInterceptor extends Interceptor {
       '/auth/register',
       '/auth/refresh',
     ];
-    
+
     return skipPaths.any((skipPath) => path.contains(skipPath));
   }
 
   void _handleUnauthorized() {
-    // Clear stored tokens
-    _localStorage.remove(LocalStorage.keyAccessToken);
-    _localStorage.remove(LocalStorage.keyRefreshToken);
-    _localStorage.remove(LocalStorage.keyUserId);
-    
+    // Clear stored sensitive tokens from secure storage.
+    _tokenStore.clear();
+
     AppLogger.warning('User session expired - tokens cleared');
-    
+
     // TODO: Navigate to login screen or trigger auth event
     // This would typically be handled by the auth bloc
   }
-} 
+}

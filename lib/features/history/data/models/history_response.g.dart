@@ -41,6 +41,9 @@ HistoryItemModel _$HistoryItemModelFromJson(Map<String, dynamic> json) =>
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       metadata: json['metadata'] as Map<String, dynamic>?,
+      tags:
+          (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+              const [],
     );
 
 Map<String, dynamic> _$HistoryItemModelToJson(HistoryItemModel instance) =>
@@ -56,4 +59,5 @@ Map<String, dynamic> _$HistoryItemModelToJson(HistoryItemModel instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
       'metadata': instance.metadata,
+      'tags': instance.tags,
     };

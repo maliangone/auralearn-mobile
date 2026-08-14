@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="errorCover" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#607CF8" />
+      <stop offset="1" stop-color="#3A54D4" />
+    </linearGradient>
+    <linearGradient id="errorBandage" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FFC85A" />
+      <stop offset="1" stop-color="#F59E0B" />
+    </linearGradient>
+    <linearGradient id="errorPencil" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFD978" />
+      <stop offset="1" stop-color="#F59E0B" />
+    </linearGradient>
+    <filter id="errorShadow" x="-20%" y="-80%" width="140%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+  </defs>
+
+  <ellipse cx="202" cy="327" rx="122" ry="16" fill="#3A54D4" opacity="0.18" filter="url(#errorShadow)" />
+
+  <g transform="rotate(-3 198 214)">
+    <path d="M103 143 C87 137 84 154 101 160" fill="none" stroke="#3A54D4" stroke-width="13" stroke-linecap="round" />
+    <path d="M101 198 C84 192 82 210 99 216" fill="none" stroke="#3A54D4" stroke-width="13" stroke-linecap="round" />
+    <path d="M99 253 C83 247 82 265 98 271" fill="none" stroke="#3A54D4" stroke-width="13" stroke-linecap="round" />
+    <rect x="92" y="111" width="211" height="207" rx="30" fill="#334BC1" opacity="0.72" />
+    <rect x="106" y="97" width="191" height="212" rx="28" fill="url(#errorCover)" stroke="#3A54D4" stroke-width="8" />
+    <path d="M127 120 C166 103 224 105 270 121" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" opacity="0.22" />
+    <rect x="126" y="126" width="144" height="145" rx="21" fill="#EEF1FE" stroke="#D8E1FF" stroke-width="6" />
+    <path d="M143 151 C172 141 215 143 250 154" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" opacity="0.76" />
+    <path d="M143 236 C169 230 208 233 246 245" fill="none" stroke="#D8E1FF" stroke-width="6" stroke-linecap="round" opacity="0.8" />
+  </g>
+
+  <g transform="rotate(-18 197 190)">
+    <rect x="142" y="177" width="109" height="41" rx="20" fill="#C97A00" opacity="0.28" />
+    <rect x="142" y="170" width="109" height="41" rx="20" fill="url(#errorBandage)" stroke="#D98200" stroke-width="6" />
+    <rect x="178" y="170" width="37" height="41" rx="13" fill="#FFD978" opacity="0.9" />
+    <path d="M151 180 C165 174 173 176 182 181" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity="0.45" />
+    <circle cx="188" cy="190" r="3.5" fill="#D98200" opacity="0.75" />
+    <circle cx="205" cy="190" r="3.5" fill="#D98200" opacity="0.75" />
+    <path d="M191 198 C194 201 199 201 202 198" fill="none" stroke="#D98200" stroke-width="3.5" stroke-linecap="round" opacity="0.78" />
+  </g>
+
+  <g transform="rotate(23 286 222)">
+    <path d="M274 294 L289 324 L304 294 Z" fill="#F4D3A2" stroke="#C99758" stroke-width="5" stroke-linejoin="round" />
+    <path d="M284 305 L289 324 L294 305 Z" fill="#3A54D4" />
+    <rect x="274" y="140" width="30" height="159" rx="11" fill="url(#errorPencil)" stroke="#D98200" stroke-width="6" />
+    <path d="M282 145 V291" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity="0.38" />
+    <rect x="274" y="126" width="30" height="27" rx="9" fill="#7C3AED" stroke="#6331C9" stroke-width="5" />
+    <path d="M280 133 C287 129 295 130 300 134" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.25" />
+  </g>
+</svg>

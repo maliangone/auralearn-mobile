@@ -1,0 +1,18 @@
+# Secrets — NEVER commit. The Anthropic key is injected at runtime from the host
+# secrets manager (Fly.io secrets / Render env-group / Cloud Run Secret Manager).
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Logs / coverage / misc
+*.log
+npm-debug.log*
+coverage/
+.DS_Store
+.vitest/

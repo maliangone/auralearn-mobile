@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/tokens.dart';
+import '../../../../core/widgets/app_empty_state.dart';
+import '../../../../l10n/app_localizations.dart';
+
+/// Placeholder for the history detail view.
+///
+/// The full feature (question + step-by-step answer + images) is not built
+/// yet; this shows a clean, styled "coming soon" state instead of a stub.
 class HistoryDetailPage extends StatelessWidget {
   final String historyId;
-  
+
   const HistoryDetailPage({
     super.key,
     required this.historyId,
@@ -10,49 +18,28 @@ class HistoryDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('History Detail'),
+        backgroundColor: AppColors.background,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'History ID: $historyId',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 16),
-            // TODO: Implement detailed history view
-            // This would typically show the full question, answer, images, etc.
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Question:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Text('This is where the detailed question would appear.'),
-                    SizedBox(height: 16),
-                    Text(
-                      'Answer:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Text('This is where the detailed answer would appear.'),
-                  ],
-                ),
+        title: Text(
+          l.historyDetailTitle,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
               ),
-            ),
-          ],
         ),
+      ),
+      body: AppEmptyState(
+        illustration: 'assets/illustrations/empty_history.svg',
+        title: l.historyDetailPlaceholderTitle,
+        subtitle: l.historyDetailPlaceholderSubtitle,
+        inline: true,
       ),
     );
   }
-} 
+}

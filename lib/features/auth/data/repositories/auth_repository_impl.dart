@@ -1,8 +1,10 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/entities/user.dart';
+import '../../domain/entities/oauth_user.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../../../core/error/exceptions.dart';
@@ -11,6 +13,8 @@ import '../datasources/auth_remote_data_source.dart';
 import '../datasources/auth_local_data_source.dart';
 import '../datasources/oauth_data_source.dart';
 import '../datasources/mock_auth_data_source.dart';
+import '../models/auth_response.dart';
+import '../models/user_model.dart';
 import '../models/login_request.dart';
 import '../models/register_request.dart';
 
@@ -92,30 +96,11 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       final oauthUser = await oauthDataSource!.signInWithGoogle();
-
-      // In a real app, you'd send the OAuth token to your backend
-      // For now, we'll create a mock auth response
-      if (remoteDataSource != null) {
-        // TODO: Implement backend OAuth verification
-        // final authResponse = await remoteDataSource!.signInWithOAuth(oauthUser);
-      }
-
-      // For now, create a user from OAuth data
-      final user = User(
-        id: oauthUser.id,
-        email: oauthUser.email,
-        name: oauthUser.name ?? 'Google User',
-        avatar: oauthUser.photoUrl,
-        subscriptionPlan: 'free',
-        usageCount: 0,
-        monthlyLimit: 10,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        emailVerifiedAt: DateTime.now(),
-        metadata: {'provider': 'google'},
-      );
-
-      return Right(user);
+      final authResponse = await _exchangeOAuthForSession(oauthUser);
+      await localDataSource.saveAuthData(authResponse);
+      return Right(_userModelToEntity(authResponse.user));
+    } on OAuthException catch (e) {
+      return Left(AuthFailure(e.message));
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
     } catch (e) {
@@ -138,37 +123,61 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       final oauthUser = await oauthDataSource!.signInWithApple();
-
-      // In a real app, you'd send the OAuth token to your backend
-      // For now, we'll create a mock auth response
-      if (remoteDataSource != null) {
-        // TODO: Implement backend OAuth verification
-        // final authResponse = await remoteDataSource!.signInWithOAuth(oauthUser);
-      }
-
-      // For now, create a user from OAuth data
-      final user = User(
-        id: oauthUser.id,
-        email: oauthUser.email.isNotEmpty
-            ? oauthUser.email
-            : 'apple.user@example.com',
-        name: oauthUser.name ?? 'Apple User',
-        avatar: oauthUser.photoUrl,
-        subscriptionPlan: 'free',
-        usageCount: 0,
-        monthlyLimit: 10,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        emailVerifiedAt: DateTime.now(),
-        metadata: {'provider': 'apple'},
-      );
-
-      return Right(user);
+      final authResponse = await _exchangeOAuthForSession(oauthUser);
+      await localDataSource.saveAuthData(authResponse);
+      return Right(_userModelToEntity(authResponse.user));
+    } on OAuthException catch (e) {
+      return Left(AuthFailure(e.message));
     } on AuthException catch (e) {
       return Left(AuthFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure(e.toString()));
     }
+  }
+
+  /// Firebase-Auth session (Phase 3): the account IS the Firebase user.
+  ///
+  /// [oauthUser] was produced by the Firebase sign-in flow, so its `idToken`
+  /// is a Firebase ID token. We persist that token as the app "access token"
+  /// — the proxy verifies it via firebase-admin on every `/solve`. Refresh is
+  /// handled by the Firebase SDK (getIdToken(forceRefresh: true)), so the
+  /// refresh-token slot is left empty.
+  Future<AuthResponse> _exchangeOAuthForSession(OAuthUser oauthUser) async {
+    final providerName =
+        oauthUser.provider == OAuthProvider.google ? 'google' : 'apple';
+
+    final email = oauthUser.email.isNotEmpty
+        ? oauthUser.email
+        : '$providerName.user@auralearn.local';
+
+    final user = UserModel(
+      id: oauthUser.id,
+      email: email,
+      name: oauthUser.name ??
+          (oauthUser.provider == OAuthProvider.google
+              ? 'Google User'
+              : 'Apple User'),
+      avatar: oauthUser.photoUrl,
+      subscriptionPlan: 'free',
+      usageCount: 0,
+      monthlyLimit: AppConfig.subscriptionLimits['free'] ?? 10,
+      createdAt: DateTime.now(),
+      lastLoginAt: DateTime.now(),
+      isEmailVerified: true,
+      metadata: {'provider': providerName},
+    );
+
+    final idToken = oauthUser.idToken;
+    if (idToken == null || idToken.isEmpty) {
+      throw const OAuthException('登录未完成（缺少 Firebase ID token）');
+    }
+    return AuthResponse(
+      accessToken: idToken,
+      // Firebase handles refresh internally; no separate refresh token needed.
+      refreshToken: '',
+      user: user,
+      expiresIn: 3600,
+    );
   }
 
   @override
@@ -178,6 +187,14 @@ class AuthRepositoryImpl implements AuthRepository {
         await mockDataSource!.logout();
         await localDataSource.clearAuthData();
         return const Right(null);
+      }
+
+      // Sign out of Firebase Auth (the app account identity) in addition to
+      // clearing local tokens; failures must not block the local clear.
+      try {
+        await fb.FirebaseAuth.instance.signOut();
+      } catch (e) {
+        // Firebase may not be configured (dev) — signOut is best-effort.
       }
 
       if (remoteDataSource != null) {

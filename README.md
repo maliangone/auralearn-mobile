@@ -35,26 +35,19 @@ This is the mobile frontend for AuraLearn, built with Flutter for cross-platform
 auralearn-mobile/
 ├── lib/
 │   ├── core/                    # Core utilities and shared code
-│   │   ├── config/              # App configuration and constants
 │   │   ├── di/                  # Dependency injection setup
-│   │   ├── error/               # Error handling and exceptions
 │   │   ├── network/             # HTTP client and interceptors
 │   │   ├── router/              # App navigation and routing
 │   │   ├── storage/             # Local storage utilities
 │   │   ├── theme/               # App theming and styles
-│   │   ├── usecases/            # Base use case classes
 │   │   └── utils/               # Helper utilities and validators
 │   └── features/                # Feature-based modules
 │       ├── auth/                # Authentication and user management
 │       │   ├── data/           # Data sources and repositories
 │       │   ├── domain/         # Business logic and entities
 │       │   └── presentation/   # UI screens and widgets
-│       ├── history/             # Question history management
 │       ├── home/               # Home screen and navigation
 │       ├── onboarding/         # App onboarding flow
-│       ├── profile/            # User profile management
-│       ├── question/           # Q&A functionality
-│       └── subscription/       # Subscription management
 │       ├── question/           # Question capture and processing
 │       └── subscription/       # Subscription and billing
 ├── pubspec.yaml                 # Flutter dependencies
@@ -76,6 +69,7 @@ This app follows **Clean Architecture** principles with **BLoC** state managemen
 - Dart 3.0+
 - Android Studio (for Android development)
 - Xcode (for iOS development, macOS only)
+- AuraLearn Backend API running (see backend README)
 
 ### Setup
 
@@ -94,7 +88,29 @@ flutter pub get
 flutter doctor
 ```
 
-3. **Run the App (Mock Mode)**
+3. **Configure API Endpoint**
+   - Update API base URL in `lib/core/config/app_config.dart` (PROXY_URL / ACCOUNTS_URL)
+     if the proxy is not running on localhost:8787
+
+4. **Production configuration (Phase 3 — all optional for local dev)**
+   - **BYOK direct mode**: no config needed — the in-app 设置 page stores the
+     user's own provider key in secure storage.
+   - **Firebase Auth + Firestore** (app accounts):
+     ```
+     --dart-define=FIREBASE_PROJECT_ID=...      --dart-define=FIREBASE_API_KEY=...      --dart-define=FIREBASE_APP_ID=...      --dart-define=FIREBASE_MESSAGING_SENDER_ID=...      --dart-define=FIREBASE_WEB_CLIENT_ID=...   # Google sign-in
+     ```
+     (see `lib/core/firebase/firebase_bootstrap.dart`; the proxy verifies the
+     Firebase ID token server-side — `proxy/src/lib/firebase-auth.ts`)
+   - **RevenueCat subscriptions** (store billing):
+     ```
+     --dart-define=RC_GOOGLE_API_KEY=goog_...      --dart-define=RC_APPLE_API_KEY=appl_...
+     ```
+     (see `lib/core/config/rc_config.dart`; the proxy syncs entitlements via
+     `/billing/sync` + the RevenueCat webhook)
+   - **Proxy**: see `proxy/README.md` (per-tier provider/model envs, Firestore,
+     RevenueCat, Cloud Run deploy via `proxy/deploy.sh`).
+
+4. **Run the App**
 ```bash
 # List available devices
 flutter devices
@@ -105,12 +121,6 @@ flutter run -d <device-id>
 # Or run on all connected devices
 flutter run
 ```
-
-**🎉 The app runs in mock mode by default - no backend setup required!**
-
-### Mock Mode vs Real Backend
-- **Mock Mode (Default)**: App runs with simulated data, perfect for frontend development
-- **Real Backend**: Set `ENABLE_MOCK_MODE=false` to connect to live API
 
 ### Development
 

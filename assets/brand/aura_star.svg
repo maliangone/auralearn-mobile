@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="auraAmber" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FFD978" />
+      <stop offset="0.52" stop-color="#F59E0B" />
+      <stop offset="1" stop-color="#E28A00" />
+    </linearGradient>
+    <filter id="auraShadow" x="-20%" y="-80%" width="140%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+  </defs>
+
+  <ellipse cx="200" cy="322" rx="112" ry="16" fill="#3A54D4" opacity="0.18" filter="url(#auraShadow)" />
+
+  <path
+    d="M200 75 C208 75 214 82 217 94 L232 148 L284 165 C296 169 301 177 297 185 C295 190 291 193 284 196 L233 211 L217 264 C213 277 207 284 199 284 C191 284 185 277 182 264 L167 211 L115 195 C103 192 98 185 102 176 C104 171 108 168 115 165 L166 148 L182 94 C185 82 192 75 200 75 Z"
+    transform="translate(3 7)"
+    fill="#D98200"
+    opacity="0.24"
+    stroke="#D98200"
+    stroke-width="7"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M200 75 C208 75 214 82 217 94 L232 148 L284 165 C296 169 301 177 297 185 C295 190 291 193 284 196 L233 211 L217 264 C213 277 207 284 199 284 C191 284 185 277 182 264 L167 211 L115 195 C103 192 98 185 102 176 C104 171 108 168 115 165 L166 148 L182 94 C185 82 192 75 200 75 Z"
+    fill="url(#auraAmber)"
+    stroke="#D98200"
+    stroke-width="8"
+    stroke-linejoin="round"
+  />
+  <path d="M186 101 C190 87 198 82 205 87 C211 91 214 102 216 112" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" opacity="0.46" />
+  <path d="M126 175 C113 178 110 184 120 188" fill="none" stroke="#FFE3A3" stroke-width="7" stroke-linecap="round" opacity="0.7" />
+
+  <circle cx="184" cy="177" r="6" fill="#3A54D4" />
+  <circle cx="215" cy="177" r="6" fill="#3A54D4" />
+  <path d="M185 194 C193 203 205 203 214 194" fill="none" stroke="#3A54D4" stroke-width="6" stroke-linecap="round" />
+  <circle cx="173" cy="191" r="5" fill="#FFC85A" opacity="0.9" />
+  <circle cx="226" cy="191" r="5" fill="#FFC85A" opacity="0.9" />
+</svg>

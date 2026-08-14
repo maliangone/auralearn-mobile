@@ -4,10 +4,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/config/app_config.dart';
+import 'core/firebase/firebase_bootstrap.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/injection_container.dart';
+import 'core/i18n/locale_cubit.dart';
 import 'core/router/app_router.dart';
 import 'core/utils/logger.dart';
+import 'l10n/app_localizations.dart';
 
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
@@ -17,10 +20,14 @@ import 'features/history/presentation/bloc/history_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Firebase Auth (app account identity) — no-op until the FIREBASE_*
+  // dart-defines are supplied; the app stays fully usable in dev without it.
+  await FirebaseBootstrap.ensureInitialized();
+
   // Initialize Hive
   await Hive.initFlutter();
-  
+
   // Initialize dependency injection
   await setupDependencies();
   
@@ -64,20 +71,33 @@ class AuraLearnApp extends StatelessWidget {
         BlocProvider<HistoryBloc>(
           create: (context) => getIt<HistoryBloc>(),
         ),
+        BlocProvider<LocaleCubit>(
+          create: (context) => getIt<LocaleCubit>(),
+        ),
       ],
-      child: MaterialApp.router(
-        title: AppConfig.appName,
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.light,
-        routerConfig: AppRouter.router,
-        builder: (context, child) {
-          return MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: const TextScaler.linear(1.0), // Disable user text scaling
-            ),
-            child: child!,
+      child: BlocBuilder<LocaleCubit, Locale?>(
+        builder: (context, locale) {
+          return MaterialApp.router(
+            title: AppConfig.appName,
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            // Light-only by design (K-12 palette); no dark theme shipped yet.
+            themeMode: ThemeMode.light,
+            locale: locale, // null = follow system
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: AppRouter.router,
+            builder: (context, child) {
+              // Respect OS text scaling, clamped to a layout-safe band.
+              final scaler = MediaQuery.textScalerOf(context).clamp(
+                minScaleFactor: 0.85,
+                maxScaleFactor: 1.3,
+              );
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(textScaler: scaler),
+                child: child!,
+              );
+            },
           );
         },
       ),
