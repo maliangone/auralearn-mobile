@@ -16,7 +16,7 @@ import 'solve_event.dart';
 ///
 /// Contract: `POST {AppConfig.proxyBaseUrl}/solve`, header
 /// `Authorization: Bearer <token>`, JSON body
-/// `{ images: [base64 jpeg], subject?, plan: "free"|"paid", context? }`.
+/// `{ images: [base64 jpeg], subject?, plan: "free"|"paid", context?, text? }`.
 ///
 /// [context] is optional reference material (Phase C document-import
 /// context-stuffing): when supplied it is sent verbatim as the `context`
@@ -33,12 +33,16 @@ class SolveClient {
   /// Images are downscaled + JPEG + base64-encoded (max 3) per contract.
   /// A mid-stream close (network drop / server hang-up) closes the stream
   /// without an extra synthetic event — the BLoC owns resume/restart policy.
+  ///
+  /// [text] is an optional follow-up question (the `/chat` lane); when
+  /// present the proxy appends it to the user turn.
   Stream<SolveEvent> solve({
     required List<Uint8List> images,
     String? subject,
     String plan = 'free',
     required String token,
     String? context,
+    String? text,
   }) async* {
     final uri = Uri.parse('${AppConfig.proxyBaseUrl}/solve');
 
@@ -47,6 +51,7 @@ class SolveClient {
       if (subject != null && subject.isNotEmpty) 'subject': subject,
       'plan': plan,
       if (context != null) 'context': context,
+      if (text != null && text.isNotEmpty) 'text': text,
     };
 
     final request = http.Request('POST', uri)

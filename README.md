@@ -89,7 +89,26 @@ flutter doctor
 ```
 
 3. **Configure API Endpoint**
-   - Update API base URL in `lib/core/network/` if backend is not running on localhost:8000
+   - Update API base URL in `lib/core/config/app_config.dart` (PROXY_URL / ACCOUNTS_URL)
+     if the proxy is not running on localhost:8787
+
+4. **Production configuration (Phase 3 — all optional for local dev)**
+   - **BYOK direct mode**: no config needed — the in-app 设置 page stores the
+     user's own provider key in secure storage.
+   - **Firebase Auth + Firestore** (app accounts):
+     ```
+     --dart-define=FIREBASE_PROJECT_ID=...      --dart-define=FIREBASE_API_KEY=...      --dart-define=FIREBASE_APP_ID=...      --dart-define=FIREBASE_MESSAGING_SENDER_ID=...      --dart-define=FIREBASE_WEB_CLIENT_ID=...   # Google sign-in
+     ```
+     (see `lib/core/firebase/firebase_bootstrap.dart`; the proxy verifies the
+     Firebase ID token server-side — `proxy/src/lib/firebase-auth.ts`)
+   - **RevenueCat subscriptions** (store billing):
+     ```
+     --dart-define=RC_GOOGLE_API_KEY=goog_...      --dart-define=RC_APPLE_API_KEY=appl_...
+     ```
+     (see `lib/core/config/rc_config.dart`; the proxy syncs entitlements via
+     `/billing/sync` + the RevenueCat webhook)
+   - **Proxy**: see `proxy/README.md` (per-tier provider/model envs, Firestore,
+     RevenueCat, Cloud Run deploy via `proxy/deploy.sh`).
 
 4. **Run the App**
 ```bash

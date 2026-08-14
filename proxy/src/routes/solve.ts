@@ -13,15 +13,19 @@ import type { MeteringStore } from "../lib/metering.js";
 import type { EntitlementStore } from "../lib/entitlement.js";
 import type { Logger } from "../lib/logger.js";
 import type { SolveRequestBody, SolveEvent } from "../types.js";
-import { verifyAuth } from "../lib/auth.js";
+import { verifyAuth, type FirebaseAuthConfig } from "../lib/firebase-auth.js";
 import { runSolve } from "../lib/solve-handler.js";
 import { formatSseEvent, SSE_HEADERS } from "../lib/sse.js";
 
 export interface RouteDeps {
   config: AppConfig;
   model: TutorModel;
+  /** OpenAI-compatible upstream — used when a tier resolves to provider "openai". */
+  openAiModel?: TutorModel;
   metering: MeteringStore;
   entitlement: EntitlementStore;
+  /** Auth config: Firebase ID token / dev fallback / legacy HS256. */
+  auth: FirebaseAuthConfig;
   logger: Logger;
 }
 
@@ -39,10 +43,7 @@ async function handle(
   reply: FastifyReply,
 ): Promise<void> {
   const reqId = (request.id as string) ?? undefined;
-  const auth = verifyAuth(request.headers["authorization"], {
-    accountsJwtSecret: deps.config.accountsJwtSecret,
-    devAuthToken: deps.config.devAuthToken,
-  });
+  const auth = await verifyAuth(request.headers["authorization"], deps.auth);
 
   const emit = beginSse(reply);
 

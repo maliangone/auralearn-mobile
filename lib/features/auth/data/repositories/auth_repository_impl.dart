@@ -1,7 +1,6 @@
-import 'dart:convert';
-
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/entities/user.dart';
@@ -136,24 +135,13 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  /// TOKEN-EXCHANGE SEAM (BYOK-proxy model).
+  /// Firebase-Auth session (Phase 3): the account IS the Firebase user.
   ///
-  /// In production the AuraLearn account JWT is NOT minted on the device — it is
-  /// issued by the accounts service (`AppConfig.accountsBaseUrl` / ACCOUNTS_URL)
-  /// which verifies the provider [oauthUser.idToken] / [oauthUser.authorizationCode]
-  /// and returns `{ accessToken, refreshToken, user }`. The proxy then verifies
-  /// that account JWT's signature locally on every `/solve`.
-  ///
-  /// There is no real accounts backend yet, so this method builds a LOCAL DEV
-  /// session so the rest of the app (router guards, `isLoggedIn`, secure token
-  /// store) works end-to-end. Replace the body with the real call below.
-  ///
-  ///   TODO(integration): exchange OAuth identity -> account JWT at ACCOUNTS_URL.
-  ///   e.g. add `AuthRemoteDataSource.exchangeOAuth(oauthUser)` ->
-  ///     POST {accountsBaseUrl}/auth/oauth
-  ///       { provider, idToken, authorizationCode? }
-  ///     -> AuthResponse { accessToken, refreshToken, user }
-  ///   Then: `return await remoteDataSource!.exchangeOAuth(oauthUser);`
+  /// [oauthUser] was produced by the Firebase sign-in flow, so its `idToken`
+  /// is a Firebase ID token. We persist that token as the app "access token"
+  /// — the proxy verifies it via firebase-admin on every `/solve`. Refresh is
+  /// handled by the Firebase SDK (getIdToken(forceRefresh: true)), so the
+  /// refresh-token slot is left empty.
   Future<AuthResponse> _exchangeOAuthForSession(OAuthUser oauthUser) async {
     final providerName =
         oauthUser.provider == OAuthProvider.google ? 'google' : 'apple';
@@ -179,26 +167,17 @@ class AuthRepositoryImpl implements AuthRepository {
       metadata: {'provider': providerName},
     );
 
-    // Dev-only placeholder tokens. The real access/refresh tokens come from the
-    // accounts service (see TODO above) and are what the proxy verifies.
+    final idToken = oauthUser.idToken;
+    if (idToken == null || idToken.isEmpty) {
+      throw const OAuthException('登录未完成（缺少 Firebase ID token）');
+    }
     return AuthResponse(
-      accessToken: _devToken('access', oauthUser, providerName),
-      refreshToken: _devToken('refresh', oauthUser, providerName),
+      accessToken: idToken,
+      // Firebase handles refresh internally; no separate refresh token needed.
+      refreshToken: '',
       user: user,
       expiresIn: 3600,
     );
-  }
-
-  /// Encodes a non-secret, clearly-marked dev token. NOT a real JWT; only used
-  /// to keep the local session machinery functional until ACCOUNTS_URL lands.
-  String _devToken(String kind, OAuthUser oauthUser, String provider) {
-    final payload = json.encode({
-      'dev': true,
-      'kind': kind,
-      'provider': provider,
-      'sub': oauthUser.id,
-    });
-    return 'devoauth_${kind}_${base64Encode(utf8.encode(payload))}';
   }
 
   @override
@@ -208,6 +187,14 @@ class AuthRepositoryImpl implements AuthRepository {
         await mockDataSource!.logout();
         await localDataSource.clearAuthData();
         return const Right(null);
+      }
+
+      // Sign out of Firebase Auth (the app account identity) in addition to
+      // clearing local tokens; failures must not block the local clear.
+      try {
+        await fb.FirebaseAuth.instance.signOut();
+      } catch (e) {
+        // Firebase may not be configured (dev) — signOut is best-effort.
       }
 
       if (remoteDataSource != null) {

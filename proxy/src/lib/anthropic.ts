@@ -25,6 +25,11 @@ export interface TutorStreamArgs {
   images: string[];
   /** Cap on output tokens. */
   maxTokens: number;
+  /**
+   * OpenAI-compatible `reasoning_effort`; "" = omit the field.
+   * The Anthropic implementation ignores it (no equivalent field).
+   */
+  reasoningEffort?: string;
 }
 
 /**

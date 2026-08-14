@@ -1370,6 +1370,120 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get settingsLanguage;
 
+  /// No description provided for @settingsModelMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer mode'**
+  String get settingsModelMode;
+
+  /// No description provided for @settingsModeSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'AuraLearn subscription'**
+  String get settingsModeSubscription;
+
+  /// No description provided for @settingsModeSubscriptionDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses the app\'s own model service; daily limits apply.'**
+  String get settingsModeSubscriptionDesc;
+
+  /// No description provided for @settingsModeByok.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring your own key'**
+  String get settingsModeByok;
+
+  /// No description provided for @settingsModeByokDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls the model vendor directly from this device with your own API key.'**
+  String get settingsModeByokDesc;
+
+  /// No description provided for @settingsByokProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get settingsByokProvider;
+
+  /// No description provided for @settingsByokApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API key'**
+  String get settingsByokApiKey;
+
+  /// No description provided for @settingsByokApiKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste your vendor API key'**
+  String get settingsByokApiKeyHint;
+
+  /// No description provided for @settingsByokApiKeyStored.
+  ///
+  /// In en, this message translates to:
+  /// **'A key is saved for this provider'**
+  String get settingsByokApiKeyStored;
+
+  /// No description provided for @settingsByokBaseUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Base URL'**
+  String get settingsByokBaseUrl;
+
+  /// No description provided for @settingsByokModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get settingsByokModel;
+
+  /// No description provided for @settingsByokModelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Model ID, e.g. gpt-5.6-luna'**
+  String get settingsByokModelHint;
+
+  /// No description provided for @settingsByokReasoningEffort.
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning effort (optional)'**
+  String get settingsByokReasoningEffort;
+
+  /// No description provided for @settingsByokNoVision.
+  ///
+  /// In en, this message translates to:
+  /// **'This provider\'s official API does not support photos — photo solving is unavailable; text questions still work.'**
+  String get settingsByokNoVision;
+
+  /// No description provided for @settingsByokTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get settingsByokTest;
+
+  /// No description provided for @settingsByokTestOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection OK'**
+  String get settingsByokTestOk;
+
+  /// No description provided for @settingsByokTestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed: {error}'**
+  String settingsByokTestFailed(String error);
+
+  /// No description provided for @settingsByokSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get settingsByokSaved;
+
+  /// No description provided for @settingsByokMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill in base URL, model and API key first.'**
+  String get settingsByokMissing;
+
   /// No description provided for @languageSystem.
   ///
   /// In en, this message translates to:

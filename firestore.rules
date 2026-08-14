@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// The Flutter client never talks to Firestore directly.
+// Every document — usage counters, entitlements, webhook idempotency records —
+// is server-authoritative and reachable only through the proxy's Admin SDK
+// (same pattern as the yijing app).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

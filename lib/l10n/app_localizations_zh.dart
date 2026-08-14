@@ -679,6 +679,65 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsLanguage => '语言';
 
   @override
+  String get settingsModelMode => '回答方式';
+
+  @override
+  String get settingsModeSubscription => 'AuraLearn 订阅';
+
+  @override
+  String get settingsModeSubscriptionDesc => '使用应用自带的模型服务，有每日次数限制。';
+
+  @override
+  String get settingsModeByok => '自带 Key';
+
+  @override
+  String get settingsModeByokDesc => '使用你自己的 API key，从本机直连模型厂商。';
+
+  @override
+  String get settingsByokProvider => '服务商';
+
+  @override
+  String get settingsByokApiKey => 'API key';
+
+  @override
+  String get settingsByokApiKeyHint => '粘贴你的厂商 API key';
+
+  @override
+  String get settingsByokApiKeyStored => '该服务商已保存 key';
+
+  @override
+  String get settingsByokBaseUrl => '接口地址';
+
+  @override
+  String get settingsByokModel => '模型';
+
+  @override
+  String get settingsByokModelHint => '模型 ID，如 gpt-5.6-luna';
+
+  @override
+  String get settingsByokReasoningEffort => '推理强度（可选）';
+
+  @override
+  String get settingsByokNoVision => '该服务商官方 API 不支持图片，拍照解题不可用；纯文字提问不受影响。';
+
+  @override
+  String get settingsByokTest => '测试连接';
+
+  @override
+  String get settingsByokTestOk => '连接成功';
+
+  @override
+  String settingsByokTestFailed(String error) {
+    return '连接失败：$error';
+  }
+
+  @override
+  String get settingsByokSaved => '已保存';
+
+  @override
+  String get settingsByokMissing => '请先填写接口地址、模型和 API key。';
+
+  @override
   String get languageSystem => '跟随系统';
 
   @override

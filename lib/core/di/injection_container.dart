@@ -13,6 +13,8 @@ import '../network/streaming/solve_client.dart';
 import '../storage/local_storage.dart';
 import '../storage/secure_token_store.dart';
 import '../utils/logger.dart';
+import '../llm/model_config.dart';
+import '../llm/solve_service.dart';
 
 import '../../features/auth/data/datasources/auth_remote_data_source.dart';
 import '../../features/auth/data/datasources/auth_local_data_source.dart';
@@ -62,7 +64,7 @@ import '../../features/subscription/domain/repositories/subscription_repository.
 import '../../features/subscription/domain/usecases/get_subscription_status_usecase.dart';
 import '../../features/subscription/domain/usecases/purchase_subscription_usecase.dart';
 import '../../features/subscription/data/datasources/billing_remote_data_source.dart';
-import '../../features/subscription/data/datasources/iap_service.dart';
+import '../../features/subscription/data/datasources/purchase_service.dart';
 import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 
 import '../../features/documents/data/datasources/document_local_data_source.dart';
@@ -94,6 +96,12 @@ Future<void> setupDependencies() async {
 
   // Core dependencies
   getIt.registerLazySingleton<LocalStorage>(() => LocalStorage(getIt()));
+
+  // LLM model config (subscription-proxy vs BYOK-direct mode) — prefs + secure
+  // key storage.
+  getIt.registerLazySingleton<ModelConfigStore>(
+    () => ModelConfigStore(getIt<LocalStorage>(), getIt<SecureTokenStore>()),
+  );
 
   // App locale (zh/en) — persisted device-level setting.
   getIt.registerLazySingleton<LocaleCubit>(() => LocaleCubit(getIt<LocalStorage>()));
@@ -211,6 +219,7 @@ void _setupAuthDependencies() {
       checkAuthStatusUseCase: getIt<CheckAuthStatusUseCase>(),
       googleSignInUseCase: getIt<GoogleSignInUseCase>(),
       appleSignInUseCase: getIt<AppleSignInUseCase>(),
+      purchases: getIt<PurchaseService>(),
     ),
   );
 }
@@ -248,11 +257,22 @@ void _setupQuestionDependencies() {
   // blocs with a closed HTTP client.
   getIt.registerFactory<SolveClient>(() => SolveClient());
 
+  // Solve service — picks subscription-proxy vs BYOK-direct from the persisted
+  // ModelConfig at each call. Factory like SolveClient: the owning bloc closes
+  // the transport on dispose.
+  getIt.registerFactory<SolveService>(
+    () => SolveServiceFactory(
+      getIt<ModelConfigStore>(),
+      ProxySolveService(getIt<SolveClient>(), getIt<SecureTokenStore>()),
+      DirectSolveService(getIt<ModelConfigStore>()),
+    ),
+  );
+
   // Bloc
   getIt.registerFactory<QuestionBloc>(
     () => QuestionBloc(
       submitQuestionUseCase: getIt<SubmitQuestionUseCase>(),
-      solveClient: getIt<SolveClient>(),
+      solveService: getIt<SolveService>(),
       localDataSource: getIt<QuestionLocalDataSource>(),
     ),
   );
@@ -371,36 +391,20 @@ void _setupSubscriptionDependencies() {
     () => PurchaseSubscriptionUseCase(getIt<SubscriptionRepository>()),
   );
 
-  // Phase C billing: proxy receipt-validation + status (/billing/*).
+  // Phase 3 billing: RevenueCat-authoritative. The client talks to
+  // /billing/sync + /billing/status; receipts never leave the store SDK.
   getIt.registerLazySingleton<BillingRemoteDataSource>(
     () => BillingRemoteDataSourceImpl(tokenStore: getIt<SecureTokenStore>()),
   );
 
-  // IAP service; its verifier posts completed purchases to the proxy for
-  // server-side validation (anti-replay enforced there).
-  getIt.registerLazySingleton<IapService>(() {
-    final billing = getIt<BillingRemoteDataSource>();
-    return IapService(
-      verifier: ({
-        required String platform,
-        required String productId,
-        required String verificationData,
-      }) async {
-        await billing.validatePurchase(
-          platform: platform,
-          productId: productId,
-          verificationData: verificationData,
-        );
-        return true;
-      },
-    );
-  });
+  // RevenueCat store service (configured only when RC_* dart-defines exist).
+  getIt.registerLazySingleton<PurchaseService>(() => PurchaseService());
 
-  // Bloc (Phase C: entitlement-authoritative, IAP-driven).
+  // Bloc (Phase 3: entitlement-authoritative, RevenueCat-driven).
   getIt.registerFactory<SubscriptionBloc>(
     () => SubscriptionBloc(
       billing: getIt<BillingRemoteDataSource>(),
-      iap: getIt<IapService>(),
+      purchases: getIt<PurchaseService>(),
     ),
   );
 }

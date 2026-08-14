@@ -98,4 +98,36 @@ class SecureTokenStore {
       AppLogger.error('Error migrating tokens from SharedPreferences', e);
     }
   }
+
+  // --- BYOK API keys -------------------------------------------------------
+  // User-supplied LLM vendor keys (direct-to-vendor mode) live in secure
+  // storage alongside auth tokens — never in plaintext SharedPreferences.
+
+  /// Key names are per provider family, e.g. `byok_key_anthropic`.
+  static String byokKey(String providerName) => 'byok_key_$providerName';
+
+  Future<String?> getByokKey(String providerName) async {
+    try {
+      return await _secureStorage.read(key: byokKey(providerName));
+    } catch (e) {
+      AppLogger.error('Error reading BYOK key for $providerName', e);
+      return null;
+    }
+  }
+
+  Future<void> saveByokKey(String providerName, String key) async {
+    try {
+      await _secureStorage.write(key: byokKey(providerName), value: key);
+    } catch (e) {
+      AppLogger.error('Error writing BYOK key for $providerName', e);
+    }
+  }
+
+  Future<void> deleteByokKey(String providerName) async {
+    try {
+      await _secureStorage.delete(key: byokKey(providerName));
+    } catch (e) {
+      AppLogger.error('Error deleting BYOK key for $providerName', e);
+    }
+  }
 }

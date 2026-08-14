@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
+import '../../../../core/firebase/firebase_bootstrap.dart';
 import '../../domain/entities/oauth_user.dart';
 
 /// Thrown when a provider sign-in fails or platform OAuth config is missing.
@@ -25,7 +27,16 @@ abstract class OAuthDataSource {
   Future<OAuthUser> signInWithApple();
 }
 
-/// Real OAuth provider sign-in.
+/// Firebase Auth OAuth sign-in (Phase 3).
+///
+/// The AuraLearn account IS the Firebase user: Google/Apple credentials are
+/// exchanged for a Firebase ID token on device, and the proxy verifies that
+/// token on every `/solve`. No self-hosted accounts service exists anymore.
+///
+/// The returned [OAuthUser] carries the FIREBASE identity:
+///   - `id`       = Firebase uid (`sub` claim of the ID token)
+///   - `idToken`  = Firebase ID token (JWT) — the proxy verifies this.
+///   - `accessToken` = same token (SecureTokenStore reads this slot).
 ///
 /// =====================================================================
 /// REQUIRED PLATFORM OAUTH CONFIG (developer must supply before this works)
@@ -34,63 +45,50 @@ abstract class OAuthDataSource {
 /// wrapped in try/catch and surfaced as an [OAuthException] with a clear
 /// Chinese message so the app never crashes when config is absent.
 ///
-/// --- GOOGLE (google_sign_in) ---
-/// 1. Google Cloud Console project with OAuth consent screen configured.
-/// 2. ANDROID:
-///    - Create an "Android" OAuth client ID using the app's package name
-///      (`com.example.auralearn` or the real applicationId) + the SHA-1/SHA-256
-///      of your debug AND release signing keys.
-///    - Download `google-services.json` and place it at
-///      `android/app/google-services.json`.
-///    - Apply the Google Services Gradle plugin
-///      (`com.google.gms.google-services`) in `android/build.gradle` +
-///      `android/app/build.gradle`.  [OUT OF LANE: integration owns Gradle.]
-/// 3. iOS:
-///    - Create an "iOS" OAuth client ID; download `GoogleService-Info.plist`
-///      into `ios/Runner/`.
-///    - Add the REVERSED_CLIENT_ID as a URL scheme in
-///      `ios/Runner/Info.plist` (CFBundleURLTypes).
-///    - If you pass a `serverClientId`/`clientId`, wire it here or via
-///      `GoogleSignIn(clientId: ..., serverClientId: ...)`.
-/// 4. (Backend) The "Web" OAuth client ID is the audience the accounts service
-///    should validate Google `idToken` against — pass it as `serverClientId`
-///    so the returned idToken is minted for the backend.
+/// --- GOOGLE ---
+/// 1. Firebase console: enable the Google provider in Authentication > Sign-in
+///    method (the Web client ID is auto-created).
+/// 2. Google Cloud Console: for Android, create an OAuth client with the app's
+///    SHA-1 (debug + release); for iOS, add the REVERSED_CLIENT_ID URL scheme
+///    in ios/Runner/Info.plist. The Firebase console "add fingerprint" flow
+///    covers the Android side.
+/// 3. Pass the Web client ID via --dart-define=FIREBASE_WEB_CLIENT_ID=... so
+///    `serverClientId` is wired below (required for ID-token minting).
 ///
-/// --- APPLE (sign_in_with_apple) ---
-/// 1. Apple Developer account; enable the "Sign in with Apple" capability for
-///    the app's App ID.
-/// 2. iOS:
-///    - Add the "Sign in with Apple" capability in Xcode
-///      (`ios/Runner/Runner.entitlements` -> `com.apple.developer.applesignin`).
-/// 3. Android / Web (Apple sign-in via web flow — only needed to offer Apple on
-///    Android): create a Services ID, a private key, and configure
-///    `WebAuthenticationOptions(clientId: '<services id>', redirectUri: ...)`.
-///    Pass it to `getAppleIDCredential(webAuthenticationOptions: ...)`.
-///    Until then Apple sign-in is iOS/macOS-only (see [signInWithApple]).
-///
-/// --- ACCOUNTS SERVICE (token exchange — see also auth_repository_impl) ---
-/// The provider tokens returned here are NOT an AuraLearn session. Integration
-/// must add an accounts-service endpoint (ACCOUNTS_URL, see app_config.dart),
-/// e.g. `POST /auth/oauth { provider, idToken|authorizationCode }` -> returns
-/// `{ accessToken, refreshToken, user }`. Wire that call in
-/// `AuthRepositoryImpl.signInWith*` where the TODO marks the seam.
+/// --- APPLE ---
+/// 1. Apple Developer account; enable "Sign in with Apple" for the App ID.
+/// 2. Xcode: add the capability (ios/Runner/Runner.entitlements ->
+///    com.apple.developer.applesignin).
+/// 3. Firebase console: enable the Apple provider with the Apple Services ID.
+///    On Android the Apple web flow needs a Services ID + key — see
+///    `webAuthenticationOptions` below (until then Apple is iOS-only).
 /// =====================================================================
 class OAuthDataSourceImpl implements OAuthDataSource {
   final GoogleSignIn _googleSignIn;
+  final fb.FirebaseAuth _firebaseAuth;
 
-  /// [googleSignIn] is injectable for testing. In production the default
-  /// instance picks up `google-services.json` / `GoogleService-Info.plist`.
-  /// Pass `serverClientId` (the Web OAuth client ID) here once available so the
-  /// `idToken` is minted for the accounts service to verify.
-  OAuthDataSourceImpl({GoogleSignIn? googleSignIn})
+  /// Both are injectable for testing. The default GoogleSignIn uses the Web
+  /// client ID from the FIREBASE_WEB_CLIENT_ID dart-define (when provided) so
+  /// the idToken is minted for Firebase to verify.
+  OAuthDataSourceImpl({GoogleSignIn? googleSignIn, fb.FirebaseAuth? firebaseAuth})
       : _googleSignIn = googleSignIn ??
             GoogleSignIn(
               scopes: const ['email', 'profile'],
-            );
+              serverClientId: const String.fromEnvironment(
+                'FIREBASE_WEB_CLIENT_ID',
+                defaultValue: '',
+              ),
+            ),
+        _firebaseAuth = firebaseAuth ?? fb.FirebaseAuth.instance;
 
   @override
   Future<OAuthUser> signInWithGoogle() async {
     try {
+      if (!FirebaseBootstrap.isReady) {
+        throw const OAuthException(
+            '未配置登录（缺少 FIREBASE_* 配置），请联系开发者');
+      }
+
       final account = await _googleSignIn.signIn();
       if (account == null) {
         // User dismissed the Google account picker.
@@ -98,20 +96,26 @@ class OAuthDataSourceImpl implements OAuthDataSource {
       }
 
       final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null) {
+        throw OAuthException(kOAuthNotConfiguredMessage, cause: 'no idToken');
+      }
 
-      return OAuthUser(
-        id: account.id,
-        email: account.email,
-        name: account.displayName,
-        photoUrl: account.photoUrl,
-        provider: OAuthProvider.google,
-        idToken: auth.idToken,
+      final credential = fb.GoogleAuthProvider.credential(
+        idToken: idToken,
         accessToken: auth.accessToken,
       );
+      final userCredential =
+          await _firebaseAuth.signInWithCredential(credential);
+      final user = userCredential.user;
+      if (user == null) throw OAuthException('Google 登录失败', cause: userCredential);
+
+      return _toOAuthUser(user, OAuthProvider.google,
+          displayName: account.displayName, photoUrl: account.photoUrl);
     } on OAuthException {
       rethrow;
     } catch (e) {
-      // Missing google-services.json / OAuth client ID, network errors, etc.
+      // Missing google-services config / OAuth client ID, network errors, etc.
       throw OAuthException(kOAuthNotConfiguredMessage, cause: e);
     }
   }
@@ -119,9 +123,13 @@ class OAuthDataSourceImpl implements OAuthDataSource {
   @override
   Future<OAuthUser> signInWithApple() async {
     try {
-      // Guard: Apple sign-in only works where the native flow (iOS/macOS) or a
-      // configured web flow is available. `isAvailable()` returns false on
-      // unsupported platforms instead of throwing.
+      if (!FirebaseBootstrap.isReady) {
+        throw const OAuthException(
+            '未配置登录（缺少 FIREBASE_* 配置），请联系开发者');
+      }
+
+      // Guard: the native Apple flow only exists on iOS/macOS; elsewhere the
+      // web flow needs a Services ID (webAuthenticationOptions below).
       final available = await SignInWithApple.isAvailable();
       if (!available) {
         throw const OAuthException('当前设备不支持 Apple 登录');
@@ -139,23 +147,27 @@ class OAuthDataSourceImpl implements OAuthDataSource {
         // ),
       );
 
-      // Apple returns name parts only on the FIRST authorization; persist them
-      // server-side. Email may be null on subsequent sign-ins.
+      final identityToken = credential.identityToken;
+      final authorizationCode = credential.authorizationCode;
+
+      final oauthCredential = fb.OAuthProvider('apple.com').credential(
+        idToken: identityToken,
+        accessToken: authorizationCode,
+      );
+      final userCredential =
+          await _firebaseAuth.signInWithCredential(oauthCredential);
+      final user = userCredential.user;
+      if (user == null) throw OAuthException('Apple 登录失败', cause: userCredential);
+
+      // Apple returns name parts only on the FIRST authorization; fall back to
+      // the Firebase displayName when the local credential has none.
       final fullName = [
         credential.givenName,
         credential.familyName,
       ].where((p) => p != null && p.isNotEmpty).join(' ').trim();
 
-      return OAuthUser(
-        // `userIdentifier` is the stable Apple subject id (best id we have).
-        id: credential.userIdentifier ?? credential.email ?? 'apple_user',
-        email: credential.email ?? '',
-        name: fullName.isEmpty ? null : fullName,
-        photoUrl: null, // Apple never returns a photo.
-        provider: OAuthProvider.apple,
-        idToken: credential.identityToken,
-        authorizationCode: credential.authorizationCode,
-      );
+      return _toOAuthUser(user, OAuthProvider.apple,
+          displayName: fullName.isEmpty ? user.displayName : fullName);
     } on OAuthException {
       rethrow;
     } on SignInWithAppleAuthorizationException catch (e) {
@@ -167,5 +179,25 @@ class OAuthDataSourceImpl implements OAuthDataSource {
       // Missing entitlement / Services ID / network errors, etc.
       throw OAuthException(kOAuthNotConfiguredMessage, cause: e);
     }
+  }
+
+  /// Maps a Firebase user to [OAuthUser]; `idToken`/`accessToken` both carry
+  /// the Firebase ID token (the proxy's verification credential).
+  Future<OAuthUser> _toOAuthUser(
+    fb.User user,
+    OAuthProvider provider, {
+    String? displayName,
+    String? photoUrl,
+  }) async {
+    final idToken = await user.getIdToken();
+    return OAuthUser(
+      id: user.uid,
+      email: user.email ?? '',
+      name: displayName ?? user.displayName,
+      photoUrl: photoUrl ?? user.photoURL,
+      provider: provider,
+      idToken: idToken,
+      accessToken: idToken,
+    );
   }
 }

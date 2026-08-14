@@ -32,14 +32,20 @@ describe("/solve route — authoritative routing end-to-end", () => {
     }
   });
 
-  it("routes a paid-entitled user (set via /billing/validate) to the paid model", async () => {
-    const { app } = buildTestApp();
-    // Grant alice a paid std entitlement through the real billing path.
+  it("routes a paid-entitled user (RevenueCat verdict paid) to the paid model", async () => {
+    const { app, revenuecat } = buildTestApp();
+    // Grant alice a paid std entitlement through the real billing path:
+    // RevenueCat says subscribed -> /billing/sync persists it -> /solve routes.
+    revenuecat.verdict = {
+      plan: "paid",
+      tier: "std",
+      expiresAt: Date.now() + 86_400_000,
+    };
     await app.inject({
       method: "POST",
-      url: "/billing/validate",
+      url: "/billing/sync",
       headers: { authorization: ALICE },
-      payload: { platform: "apple", receipt: "ok-1", productId: "sub_std" },
+      payload: {},
     });
 
     const res = await app.inject({

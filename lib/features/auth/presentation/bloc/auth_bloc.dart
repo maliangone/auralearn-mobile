@@ -9,6 +9,7 @@ import '../../domain/usecases/register_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
 import '../../domain/usecases/check_auth_status_usecase.dart';
 import '../../domain/usecases/oauth_login_usecase.dart';
+import '../../../subscription/data/datasources/purchase_service.dart';
 import '../../../../core/utils/logger.dart';
 
 import '../../../../core/usecases/usecase.dart';
@@ -21,6 +22,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final GoogleSignInUseCase? googleSignInUseCase;
   final AppleSignInUseCase? appleSignInUseCase;
 
+  /// Optional RevenueCat binding: on sign-in the RC appUserID is bound to the
+  /// account uid (so the proxy can query subscribers/{uid}); on logout it is
+  /// released so entitlements never leak across accounts.
+  final PurchaseService? purchases;
+
   AuthBloc({
     required this.loginUseCase,
     required this.registerUseCase,
@@ -28,6 +34,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.checkAuthStatusUseCase,
     this.googleSignInUseCase,
     this.appleSignInUseCase,
+    this.purchases,
   }) : super(AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
@@ -132,6 +139,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
 
     final result = await logoutUseCase.call();
+    // Release the RevenueCat identity so the next account never inherits it.
+    await purchases?.logOut();
 
     result.fold(
       (failure) {
@@ -186,6 +195,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       },
       (user) {
         AppLogger.info('Google sign-in successful: ${user.email}');
+        // Bind RevenueCat to the account uid so the server can query
+        // subscribers/{uid}; never blocks the auth flow.
+        purchases?.logInFirebaseUid(user.id).ignore();
         emit(AuthAuthenticated(user: user));
       },
     );
@@ -212,6 +224,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       },
       (user) {
         AppLogger.info('Apple sign-in successful: ${user.email}');
+        purchases?.logInFirebaseUid(user.id).ignore();
         emit(AuthAuthenticated(user: user));
       },
     );

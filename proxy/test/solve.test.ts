@@ -3,6 +3,8 @@ import { runSolve } from "../src/lib/solve-handler.js";
 import { InMemoryMeteringStore } from "../src/lib/metering.js";
 import { InMemoryEntitlementStore, type Entitlement } from "../src/lib/entitlement.js";
 import type { SolveEvent } from "../src/types.js";
+import type { AppConfig } from "../src/config.js";
+import type { TutorModel } from "../src/lib/anthropic.js";
 import { FakeTutorModel, FailingTutorModel, captureLogger, testConfig } from "./helpers.js";
 
 const SECRET_PROBLEM = "Solve 2x + 3 = 11 for x";
@@ -30,10 +32,17 @@ async function collect(
     entitlement?: Entitlement;
     /** Optional doc-context to stuff. */
     context?: string;
+    /** OpenAI-compatible upstream model (used when a tier resolves to openai). */
+    openAiModel?: TutorModel;
+    /** Config overrides (e.g. text-only tier for the model_no_vision path). */
+    config?: Partial<AppConfig>;
   } = {},
 ): Promise<{ events: SolveEvent[]; lines: string[]; metered: boolean; model: FakeTutorModel | FailingTutorModel }> {
   const { logger, lines } = captureLogger();
-  const config = testConfig(opts.quota !== undefined ? { freeDailyQuota: opts.quota } : {});
+  const config = testConfig({
+    ...(opts.quota !== undefined ? { freeDailyQuota: opts.quota } : {}),
+    ...(opts.config ?? {}),
+  });
   const metering = new InMemoryMeteringStore();
   const entitlementStore = new InMemoryEntitlementStore();
   const userId = opts.userId ?? "user-1";
@@ -43,7 +52,7 @@ async function collect(
   const events: SolveEvent[] = [];
 
   const { metered } = await runSolve(
-    { config, model, metering, entitlement: entitlementStore, logger },
+    { config, model, openAiModel: opts.openAiModel, metering, entitlement: entitlementStore, logger },
     {
       userId,
       plan: opts.plan ?? "free",
@@ -153,6 +162,61 @@ describe("/solve pipeline (mocked Anthropic client)", () => {
     const sent = (m as FakeTutorModel).lastArgs?.userText ?? "";
     expect(sent).toContain(shortContext);
     expect(sent.toLowerCase()).not.toContain("was truncated");
+  });
+
+  it("routes an openai tier to the openAiModel with the tier's model id", async () => {
+    const anthropicModel = new FakeTutorModel(cannedTutorChunks());
+    const openAiModel = new FakeTutorModel(cannedTutorChunks());
+    const { events } = await collect(anthropicModel, {
+      openAiModel,
+      config: {
+        models: {
+          ...testConfig().models,
+          free: {
+            provider: "openai",
+            model: "gpt-5.6-luna",
+            reasoningEffort: "max",
+            supportsVision: true,
+          },
+        },
+      },
+    });
+
+    // The default anthropic model was NOT called.
+    expect(anthropicModel.lastArgs).toBeUndefined();
+    // The openai model got the tier model + reasoning effort.
+    expect(openAiModel.lastArgs?.model).toBe("gpt-5.6-luna");
+    expect(openAiModel.lastArgs?.reasoningEffort).toBe("max");
+    const done = events[events.length - 1];
+    if (done.type === "done") expect(done.model).toBe("gpt-5.6-luna");
+  });
+
+  it("rejects images on a text-only tier with model_no_vision BEFORE metering", async () => {
+    const textOnlyTier = {
+      provider: "openai" as const,
+      model: "deepseek-chat",
+      reasoningEffort: "",
+      supportsVision: false,
+    };
+    const model = new FakeTutorModel(cannedTutorChunks());
+    const openAiModel = new FakeTutorModel(cannedTutorChunks());
+    const { events, metered } = await collect(model, {
+      openAiModel,
+      config: {
+        models: {
+          ...testConfig().models,
+          free: textOnlyTier,
+        },
+      },
+    });
+
+    expect(metered).toBe(false);
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe("error");
+    if (events[0].type === "error") expect(events[0].code).toBe("model_no_vision");
+    // Neither upstream model was called.
+    expect(model.lastArgs).toBeUndefined();
+    expect(openAiModel.lastArgs).toBeUndefined();
   });
 
   it("blocks with quota_exceeded once the daily limit is reached, and makes NO LLM call after", async () => {

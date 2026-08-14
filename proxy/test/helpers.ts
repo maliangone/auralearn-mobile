@@ -8,10 +8,7 @@ import {
   InMemoryEntitlementStore,
   type EntitlementStore,
 } from "../src/lib/entitlement.js";
-import {
-  MockReceiptVerifier,
-  type ReceiptVerifier,
-} from "../src/lib/receipt-verifier.js";
+import type { RevenueCatClient, RevenueCatSubscriber } from "../src/lib/revenuecat.js";
 
 /** A fake TutorModel that streams canned chunks — NO network, NO real API. */
 export class FakeTutorModel implements TutorModel {
@@ -33,6 +30,22 @@ export class FailingTutorModel implements TutorModel {
   async *streamTutor(): AsyncIterable<TextChunk> {
     yield { text: "RECOGNIZED: a problem\n\n" };
     throw new Error("simulated upstream failure");
+  }
+}
+
+/** A deterministic RevenueCat client — records lookups, returns a fixed verdict. */
+export class FakeRevenueCat implements RevenueCatClient {
+  public queriedIds: string[] = [];
+  /** Mutable so tests can flip the verdict between calls. */
+  public verdict: RevenueCatSubscriber = { plan: "free", tier: "free" };
+
+  constructor(verdict?: RevenueCatSubscriber) {
+    if (verdict) this.verdict = verdict;
+  }
+
+  async getSubscriber(appUserId: string): Promise<RevenueCatSubscriber> {
+    this.queriedIds.push(appUserId);
+    return { ...this.verdict };
   }
 }
 
@@ -63,24 +76,29 @@ export interface TestApp {
   config: AppConfig;
   metering: MeteringStore;
   entitlement: EntitlementStore;
-  receiptVerifier: ReceiptVerifier;
+  revenuecat: FakeRevenueCat;
   lines: string[];
 }
 
 /**
- * Build the full Fastify app with in-memory stores + a deterministic mock receipt
- * verifier and a captured logger. NO network. Returns the stores so tests can seed
- * and inspect them via `app.inject`.
+ * Build the full Fastify app with in-memory stores + a deterministic mock
+ * RevenueCat client and a captured logger. NO network. Returns the stores so
+ * tests can seed and inspect them via `app.inject`.
  */
 export function buildTestApp(overrides: Partial<AppConfig> = {}): TestApp {
   const config = testConfig(overrides);
   const { logger, lines } = captureLogger();
   const metering = new InMemoryMeteringStore();
   const entitlement = new InMemoryEntitlementStore();
-  // Real clock so the mock's expiresAt (now + 30d) is genuinely in the future and
-  // the entitlement store's expiry check treats it as active.
-  const receiptVerifier = new MockReceiptVerifier();
+  const revenuecat = new FakeRevenueCat();
   const model = new FakeTutorModel(["RECOGNIZED: x\n\n结论: y."]);
-  const app = buildApp({ config, model, metering, entitlement, receiptVerifier, logger });
-  return { app, config, metering, entitlement, receiptVerifier, lines };
+  const app = buildApp({
+    config,
+    model,
+    metering,
+    entitlement,
+    revenuecat,
+    logger,
+  });
+  return { app, config, metering, entitlement, revenuecat, lines };
 }

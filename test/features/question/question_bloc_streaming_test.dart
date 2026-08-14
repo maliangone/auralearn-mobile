@@ -5,10 +5,9 @@ import 'dart:typed_data';
 
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 
 import 'package:auralearn/core/error/failures.dart';
-import 'package:auralearn/core/network/streaming/solve_client.dart';
+import 'package:auralearn/core/llm/solve_service.dart';
 import 'package:auralearn/core/network/streaming/solve_event.dart';
 import 'package:auralearn/features/question/data/datasources/question_local_data_source.dart';
 import 'package:auralearn/features/question/data/models/question_response.dart';
@@ -23,37 +22,28 @@ import 'package:auralearn/features/question/presentation/bloc/question_state.dar
 // Fakes — plain Dart; no mockito / mocktail needed.
 // ---------------------------------------------------------------------------
 
-/// Minimal http.Client stub so SolveClient's super-constructor is satisfied
-/// without touching the real network. FakeSolveClient overrides [solve]
-/// entirely so this send() is never called.
-class _NoOpHttpClient extends http.BaseClient {
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    throw UnimplementedError(
-      'FakeSolveClient.solve is overridden; _NoOpHttpClient.send should never be reached.',
-    );
-  }
-}
-
-/// A [SolveClient] whose [solve] method returns whatever stream is assigned to
-/// [nextStream] before the call. [closeCallCount] tracks how many times
+/// A [SolveService] whose [solve] method returns whatever stream is assigned
+/// to [nextStream] before the call. [closeCallCount] tracks how many times
 /// [close] was called.
-class FakeSolveClient extends SolveClient {
+class FakeSolveService implements SolveService {
   Stream<SolveEvent>? nextStream;
   int closeCallCount = 0;
-
-  FakeSolveClient() : super(client: _NoOpHttpClient());
 
   @override
   Stream<SolveEvent> solve({
     required List<Uint8List> images,
     String? subject,
-    String plan = 'free',
-    required String token,
+    String? text,
     String? context,
   }) {
     return nextStream!;
   }
+
+  @override
+  Future<bool> supportsVision() async => true;
+
+  @override
+  Future<String?> usabilityError() async => null;
 
   @override
   void close() {
@@ -112,12 +102,12 @@ Uint8List get _minimalImageBytes => Uint8List.fromList(const <int>[
     ]);
 
 QuestionBloc _makeBloc({
-  required FakeSolveClient solveClient,
+  required FakeSolveService solveService,
   required FakeQuestionLocalDataSource localDataSource,
 }) {
   return QuestionBloc(
     submitQuestionUseCase: SubmitQuestionUseCase(FakeQuestionRepository()),
-    solveClient: solveClient,
+    solveService: solveService,
     localDataSource: localDataSource,
   );
 }
@@ -137,14 +127,14 @@ QuestionBloc _makeBloc({
 
 void main() {
   group('QuestionBloc — streaming solve path', () {
-    late FakeSolveClient fakeClient;
+    late FakeSolveService fakeService;
     late FakeQuestionLocalDataSource fakeLocalDs;
     late QuestionBloc bloc;
 
     setUp(() {
-      fakeClient = FakeSolveClient();
+      fakeService = FakeSolveService();
       fakeLocalDs = FakeQuestionLocalDataSource();
-      bloc = _makeBloc(solveClient: fakeClient, localDataSource: fakeLocalDs);
+      bloc = _makeBloc(solveService: fakeService, localDataSource: fakeLocalDs);
     });
 
     tearDown(() async {
@@ -161,7 +151,7 @@ void main() {
       'QuestionAnswered; persists the conclusion to the local datasource',
       () async {
         final controller = StreamController<SolveEvent>();
-        fakeClient.nextStream = controller.stream;
+        fakeService.nextStream = controller.stream;
 
         // Step 1: attach the listener BEFORE adding any events.
         final expectation = expectLater(
@@ -232,7 +222,7 @@ void main() {
       'the server message; nothing is persisted',
       () async {
         final controller = StreamController<SolveEvent>();
-        fakeClient.nextStream = controller.stream;
+        fakeService.nextStream = controller.stream;
 
         final expectation = expectLater(
           bloc.stream,
@@ -264,7 +254,7 @@ void main() {
       'the server message; nothing is persisted',
       () async {
         final controller = StreamController<SolveEvent>();
-        fakeClient.nextStream = controller.stream;
+        fakeService.nextStream = controller.stream;
 
         final expectation = expectLater(
           bloc.stream,
@@ -297,7 +287,7 @@ void main() {
       'problem and steps preserved; nothing is persisted',
       () async {
         final controller = StreamController<SolveEvent>();
-        fakeClient.nextStream = controller.stream;
+        fakeService.nextStream = controller.stream;
 
         final expectation = expectLater(
           bloc.stream,

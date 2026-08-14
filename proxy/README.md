@@ -1,13 +1,15 @@
 # AuraLearn LLM Proxy (Phase A0 + Phase C)
 
 A **stateless** Node + TypeScript proxy that forwards K-12 tutor solve/chat
-requests to the Anthropic Messages API. It is the **only holder of the LLM
-vendor key** — the key never ships in the Flutter client binary.
+requests to a per-tier upstream model — Anthropic Messages API or any
+OpenAI-compatible chat-completions host (OpenAI `gpt-5.6-luna`, DeepSeek,
+custom endpoints). It is the **only holder of the LLM vendor keys** — keys
+never ship in the Flutter client binary.
 
-Phase C adds: real account-JWT auth, a server-authoritative **entitlement store**,
-IAP **receipt validation + anti-replay binding**, **authoritative model routing**
-(the plan comes from the server, never the client), and optional **doc-context**
-(context-stuffing) on `/solve` + `/chat`.
+Phase 3 adds: Firebase Auth (ID-token verification) + Firestore persistence, a
+RevenueCat-authoritative **entitlement store** (sync + webhook), **authoritative
+model routing** (the plan comes from the server, never the client), and optional
+**doc-context** (context-stuffing) on `/solve` + `/chat`.
 
 ## Invariants (do not violate)
 
@@ -68,22 +70,41 @@ pass). Record the results in the ADR "resolved model-ID verdict" field.
 
 | Var | Purpose | Default |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | **Secret.** Runtime-injected. Server refuses to start without it. | — |
-| `MODEL_FREE` | Free-tier model (vision). | `claude-haiku-4-5-20251001` |
-| `MODEL_PAID_STD` | Paid standard model. | `claude-sonnet-4-6` |
-| `MODEL_PAID_PRO` | Paid pro model. | `claude-opus-4-8` |
+| `ANTHROPIC_API_KEY` | **Secret.** Runtime-injected. Required only if a tier uses the anthropic provider. | — |
+| `ANTHROPIC_BASE_URL` | Anthropic API base URL. | `https://api.anthropic.com` |
+| `OPENAI_API_KEY` | **Secret.** Runtime-injected. Required only if a tier uses the openai provider. | — |
+| `OPENAI_BASE_URL` | OpenAI-compatible base URL (OpenAI, DeepSeek, any chat-completions host). | `https://api.openai.com/v1` |
+| `{FREE\|STD\|PRO}_PROVIDER` | Per-tier provider: `anthropic` \| `openai`. | `openai` (or `anthropic` if the legacy `MODEL_*` var is set) |
+| `{FREE\|STD\|PRO}_MODEL` | Per-tier model id. | `gpt-5.6-luna` (openai) / legacy Claude ids (anthropic) |
+| `{FREE\|STD\|PRO}_REASONING_EFFORT` | OpenAI-compatible `reasoning_effort` (none/low/medium/high/xhigh/max). Empty = omit. | `max` on api.openai.com; empty elsewhere |
+| `{FREE\|STD\|PRO}_SUPPORTS_VISION` | `true`/`false`. Images on a text-only tier are rejected with `model_no_vision` (before metering). | inferred (deepseek base URL => false) |
 | `PORT` | HTTP port. | `8787` |
-| `REDIS_URL` | If set, use the Redis metering + persistent entitlement stores (multi-instance). Blank = in-memory (single instance). | blank |
+| `FIREBASE_PROJECT_ID` | Firebase project id — enables Firebase ID-token verification + Firestore persistence (production). Blank = in-memory stores, dev/legacy auth only. | blank |
+| `REVENUECAT_API_KEY` | **Secret.** RevenueCat REST API key for `/billing/sync` lookups. Blank = "not subscribed" (dev-safe). | — |
+| `REVENUECAT_WEBHOOK_SECRET` / `REVENUECAT_WEBHOOK_HMAC_SECRET` | **Secrets.** Webhook auth (static + HMAC). Blank = webhook always 401. | — |
 | `FREE_DAILY_QUOTA` | Per-user daily question cap (abuse guard; applies to the **free** tier). | `3` |
 | `ACCOUNTS_JWT_SECRET` | **Secret.** HS256 shared secret to verify account JWTs. Token conveys identity only (`sub` → userId), never the plan. | — |
 | `DEV_AUTH_TOKEN` | Dev fallback bearer token (**LOCAL DEV ONLY**). Leave blank in prod. | `dev-local-token` |
-| `APPLE_IAP_SHARED_SECRET` | **Secret.** Apple App Store Server API cred. Absent → mock verifier. | — |
-| `APPLE_IAP_ISSUER_ID` | Apple App Store Connect issuer id. Absent → mock verifier. | — |
-| `GOOGLE_PLAY_SA_JSON` | **Secret.** Google Play Developer API service-account JSON. Absent → mock verifier. | — |
 | `MAX_CONTEXT_CHARS` | Max chars of doc-`context` stuffed as REFERENCE material (truncated past this). | `12000` |
 
-Model IDs come from the official Claude reference and are kept in **env, not
+Model IDs come from the official vendor references and are kept in **env, not
 hardcoded in logic**. Pricing is NOT encoded anywhere — confirm at Step 0.
+
+### Model routing (provider-agnostic)
+
+Each tier resolves to `{ provider, model, reasoningEffort, supportsVision }`
+(`src/config.ts`). The **default stack is OpenAI `gpt-5.6-luna` with
+`reasoning_effort=max`** for all three tiers — it is vision-capable and cheap.
+The legacy `MODEL_FREE` / `MODEL_PAID_STD` / `MODEL_PAID_PRO` envs remain
+supported and select the Anthropic provider (Haiku 4.5 / Sonnet 4.6 /
+Opus 4.8, all vision). DeepSeek is available as a **text-only lane**
+(`{tier}_PROVIDER=openai` + `OPENAI_BASE_URL=https://api.deepseek.com` +
+`{tier}_MODEL=deepseek-chat`): its official API does not accept images, so
+photo requests on that tier are rejected with `model_no_vision` **before
+metering** (no quota cost).
+
+The `verify-models` gate (below) must still PASS against the live endpoints
+before production.
 
 ### Model-ID / vision confirmation (claude-api reference)
 
@@ -94,31 +115,33 @@ Resolved against the official Claude API reference (Phase A Step 0 inputs):
 - `claude-opus-4-8` — Opus 4.8, vision, 1M context.
 
 All three accept base64 `image` content blocks (`media_type: image/jpeg`) and
-support Messages API streaming. The runtime `verify-models` gate must still PASS
-against the live Models API before production (it asserts exact
-`max_input_tokens` and the `image_input` capability per tier).
+support Messages API streaming. `gpt-5.6-luna` accepts `image_url` content
+parts (data URLs), supports `reasoning_effort` up to `max`, ~1M context, and
+is the default photo-solving lane. DeepSeek's official chat API is text-only
+(no `image_url` support) — text follow-ups only.
 
-## Auth (Phase C — real account JWT)
+## Auth (Phase 3 — Firebase ID token)
 
-`Authorization: Bearer <token>`. Two accepted forms, checked in this order:
+`Authorization: Bearer <token>`. Accepted forms, checked in this order:
 
 1. **Dev fallback (LOCAL DEV ONLY).** If `DEV_AUTH_TOKEN` is set and the bearer
    equals it (or `<DEV_AUTH_TOKEN>:<label>` for multiple test users), it is
-   accepted WITHOUT JWT verification and mapped to a content-free `userId` (a
-   hash). **Leave `DEV_AUTH_TOKEN` blank in production** so only real JWTs pass.
-2. **Account JWT (HS256).** Otherwise the bearer is verified as an HS256 JWT
-   signed with `ACCOUNTS_JWT_SECRET` (signature checked locally, constant-time).
-   `exp`/`nbf` are enforced (±30s skew). The `userId` is taken from the `sub`
-   claim.
+   accepted WITHOUT verification and mapped to a content-free `userId` (a
+   hash). **Leave `DEV_AUTH_TOKEN` blank in production** so only real ID tokens
+   pass.
+2. **Firebase ID token (production).** When `FIREBASE_PROJECT_ID` is set, the
+   bearer is verified via firebase-admin `verifyIdToken` — the Flutter client
+   signs in with Google/Apple through Firebase Auth and sends this token. The
+   Firebase uid (`sub`) is the `userId` every route keys on, and is also the
+   RevenueCat appUserID (the client calls `Purchases.logIn(uid)`).
+3. **Legacy HS256 JWT (dev/tooling).** `ACCOUNTS_JWT_SECRET` verification is
+   kept for local tooling compatibility (`src/lib/auth.ts`).
 
 **Identity only.** The token carries *who the user is*, never their plan/tier.
-The plan is always resolved server-side from the entitlement store, so a client
-cannot self-upgrade by minting a richer claim. Verification is dependency-free
-(`node:crypto` HMAC-SHA256) — see `src/lib/auth.ts`. `signHs256Jwt` is exported
-for tests/tooling to mint tokens; the account service is the real signer.
+The plan is always resolved server-side (RevenueCat + Firestore), so a client
+cannot self-upgrade by minting a richer claim.
 
-Missing / malformed / tampered / expired / wrong-secret / `sub`-less tokens →
-`unauthorized`.
+Missing / malformed / tampered / expired / revoked tokens → `unauthorized`.
 
 ## Entitlement-authoritative model routing
 
@@ -141,31 +164,41 @@ In-memory store for single-instance/dev/tests; a documented
 `PersistentEntitlementStore` (Redis/SQL) stub for production. Content-free schema:
 `entitlement:{userId}` and a UNIQUE `receipt:{receiptId} → userId`.
 
-## Billing / IAP (`/billing/*`) — JSON, auth required
+## Billing / subscriptions (`/billing/*`, `/webhook/revenuecat`) — JSON, auth required
 
-### `POST /billing/validate`
+RevenueCat is the purchase authority (Phase 3). Receipts NEVER reach this
+proxy: the store SDK hands them to RevenueCat, and this service either
+pulls (`/billing/sync`) or receives pushes (webhook).
 
-Body: `{ "platform": "apple"|"google", "receipt"|"purchaseToken", "productId" }`.
+### `POST /billing/sync`
 
-1. Verifies the receipt behind a mockable `ReceiptVerifier`
-   (`src/lib/receipt-verifier.ts`): Apple App Store Server API + Google Play
-   Developer API. The REAL store call needs your credentials (`APPLE_IAP_*` /
-   `GOOGLE_PLAY_SA_JSON`); **absent → a deterministic mock** (also used by tests).
-2. Derives a stable, content-free `receiptId` (Apple `originalTransactionId`,
-   Google `purchaseToken`).
-3. **Anti-replay / cross-account (Critic M3):** if that `receiptId` is already
-   owned by a **different** user → **`409 receipt_already_bound`** (one purchase
-   cannot entitle many accounts). The same owner re-presenting it is an idempotent
-   restore (`200`). Otherwise the receipt is bound to this user and
-   `setEntitlement(userId, { plan:'paid', tier: map(productId), expiresAt })` runs.
-   `productId` containing `pro` → `pro` tier, else `std`.
+Body: `{}` — the client sends nothing; the server queries
+`GET https://api.revenuecat.com/v1/subscribers/{uid}` itself and persists the
+`pro` entitlement (plan/tier/expiry) into the entitlement store. The Firebase
+uid IS the RevenueCat appUserID (the app calls `Purchases.logIn(uid)`).
 
-Responses: `200 { ok, entitlement }`, `400 bad_request`, `401 unauthorized`,
-`402 invalid_receipt`, `409 receipt_already_bound`.
+Responses: `200 { ok, plan, tier, expiresAt }`, `401 unauthorized`,
+`502 upstream_error` (RevenueCat unreachable).
 
 ### `GET /billing/status`
 
-→ `{ entitlement }` for the authenticated user (defaults to free).
+→ `{ plan, tier, expiresAt }` for the authenticated user (defaults to free).
+
+### `POST /webhook/revenuecat`
+
+Push channel for renewals/expirations. Dual auth: a static
+`Authorization: Bearer <REVENUECAT_WEBHOOK_SECRET>` AND an
+`X-RevenueCat-Webhook-Signature` HMAC-SHA256 (`t=...,v1=...`, 300s window).
+
+- Grant events (INITIAL_PURCHASE / RENEWAL / UNCANCELLATION / PRODUCT_CHANGE /
+  SUBSCRIPTION_EXTENDED) persist `plan=paid` + expiry; revoke events
+  (EXPIRATION / BILLING_ISSUE) persist `plan=free`.
+- Idempotent + out-of-order safe: event ids are recorded in Firestore
+  (`revenuecatWebhookEvents/{eventId}`) inside the same transaction that writes
+  `users/{uid}`; events older than the user's last-applied
+  `subscriptionEventAtMs` are dropped.
+- `$RCAnonymousID` app user ids are resolved from `aliases` to the real
+  Firebase uid.
 
 ## Doc-context (context-stuffing)
 
@@ -218,7 +251,9 @@ Each SSE frame is a single `data: <json>` line. Events arrive in this order:
    {"type":"error","code":"quota_exceeded","message":"Daily question limit reached (3/day). Upgrade for more."}
    ```
    `code` is one of: `quota_exceeded`, `unauthorized`, `bad_request`,
-   `upstream_error`, `internal_error`.
+   `upstream_error`, `internal_error`, `model_no_vision` (the resolved tier
+   model is text-only and the request carried images — emitted BEFORE
+   metering, so no quota is consumed).
 
 ### `GET /healthz` → `{ "ok": true }`
 
@@ -237,12 +272,35 @@ Each SSE frame is a single `data: <json>` line. Events arrive in this order:
 
 ### Metering store implementations
 
-- **In-memory** (default, single instance): atomic via Node's single-threaded
-  event loop — the read+write happens synchronously within one tick.
-- **Redis** (`REDIS_URL` set): a documented stub in `src/lib/metering.ts`. The
-  production implementation uses an `EVAL` Lua script doing check-and-increment
-  in one round-trip (so an over-limit user does not keep inflating the counter)
-  plus a day-end `EXPIRE` TTL. Wire the live client in Phase A1.
+- **In-memory** (default, dev/test): atomic via Node's single-threaded event
+  loop — the read+write happens synchronously within one tick.
+- **Firestore** (`FIREBASE_PROJECT_ID` set, production): the daily counter
+  lives on `users/{uid}`; the check-and-increment runs in a Firestore
+  transaction (serialized on the user document), so N concurrent solves at
+  limit-1 yield exactly one allowed result. Restarts keep the counters.
+
+## Cloud Run deployment (Phase 3)
+
+`Dockerfile` + `deploy.sh` deploy the proxy to Cloud Run (region
+asia-southeast1, 512Mi/1CPU, min 0 / max 3, timeout 300s for long streams,
+`--allow-unauthenticated` — every route verifies auth at the application
+layer). ADC gives the runtime service account Firestore + Firebase Auth
+access.
+
+```bash
+# One-time: create secrets (never committed anywhere)
+gcloud secrets create ANTHROPIC_API_KEY --data-file=- <<< "sk-ant-..."
+gcloud secrets create OPENAI_API_KEY --data-file=- <<< "sk-..."
+gcloud secrets create REVENUECAT_API_KEY --data-file=- <<< "sk_..."
+gcloud secrets create REVENUECAT_WEBHOOK_SECRET --data-file=- <<< "<random>"
+gcloud secrets create REVENUECAT_WEBHOOK_HMAC_SECRET --data-file=- <<< "<random>"
+
+FIREBASE_PROJECT_ID=your-firebase-project-id ./deploy.sh
+```
+
+Then point the Flutter client at the service URL:
+`flutter run --dart-define=PROXY_URL=https://<service>-...run.app` and add the
+Firebase + RevenueCat dart-defines (see the client README/SETUP).
 
 ## CI / secret-scanning gate
 
@@ -257,17 +315,13 @@ placeholders / format documentation).
 
 ## Credentials the user must supply (blocked on user infra)
 
-- **Real Anthropic key + `verify-models` PASS** — required before production
-  `/solve`. Cannot be run here (no key).
-- **`ACCOUNTS_JWT_SECRET`** — the HS256 secret the accounts service signs JWTs
-  with. Required in production (set `DEV_AUTH_TOKEN` blank there).
-- **`APPLE_IAP_SHARED_SECRET` + `APPLE_IAP_ISSUER_ID`** — Apple App Store Server
-  API credentials. Without them the Apple path uses the deterministic mock; the
-  real `fetch` to the App Store Server API is a marked stub in
-  `src/lib/receipt-verifier.ts`.
-- **`GOOGLE_PLAY_SA_JSON`** — Google Play Developer API service-account JSON.
-  Without it the Google path uses the mock; the real call is the matching stub.
-- **Redis / DB** — `REDIS_URL` + a live client wired into `RedisMeteringStore`
-  and `PersistentEntitlementStore` for multi-instance deployments.
-- **Host secrets manager** — Fly.io/Render/Cloud Run secret injection for all
-  secrets above (and key rotation + separate dev/prod keys).
+- **Real provider keys + `verify-models` PASS** — `ANTHROPIC_API_KEY` /
+  `OPENAI_API_KEY` for the tiers actually configured. Required before
+  production `/solve` (dev can run on `DEV_AUTH_TOKEN` + in-memory stores).
+- **`FIREBASE_PROJECT_ID` + Firebase project** — enables Firebase ID-token
+  verification and Firestore persistence. Without it the proxy runs
+  in-memory (dev only; restart loses metering/entitlement).
+- **`REVENUECAT_API_KEY` + webhook secrets** — subscription sync + webhook
+  auth. Without them `/billing/sync` reports "not subscribed" (dev-safe).
+- **gcloud project** — Cloud Run + Secret Manager for the production deploy
+  (key rotation + separate dev/prod keys per the M1 lifecycle).

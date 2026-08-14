@@ -19,6 +19,7 @@ export interface LogMeta {
   userId?: string;
   plan?: string;
   model?: string;
+  provider?: string;
   route?: string;
   event?: string;
   code?: string;
@@ -35,6 +36,7 @@ const ALLOWED_KEYS: ReadonlySet<keyof LogMeta> = new Set<keyof LogMeta>([
   "userId",
   "plan",
   "model",
+  "provider",
   "route",
   "event",
   "code",

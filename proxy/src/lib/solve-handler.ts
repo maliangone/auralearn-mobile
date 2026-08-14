@@ -20,7 +20,7 @@ import type { TutorModel } from "./anthropic.js";
 import type { MeteringStore } from "./metering.js";
 import type { Logger } from "./logger.js";
 import type { EntitlementStore } from "./entitlement.js";
-import { resolveModelFromEntitlement } from "./router.js";
+import { resolveProviderFromEntitlement } from "./router.js";
 import { todayUtc } from "./metering.js";
 import {
   TUTOR_SYSTEM_PROMPT,
@@ -34,7 +34,10 @@ const MAX_TOKENS = 2048;
 
 export interface SolveDeps {
   config: AppConfig;
+  /** Default (anthropic) tutor model. */
   model: TutorModel;
+  /** OpenAI-compatible tutor model — used when a tier resolves to provider "openai". */
+  openAiModel?: TutorModel;
   metering: MeteringStore;
   entitlement: EntitlementStore;
   logger: Logger;
@@ -175,7 +178,7 @@ export async function runSolve(
   emit: Emit,
   opts: { reqId?: string; route?: string } = {},
 ): Promise<{ metered: boolean }> {
-  const { config, model, metering, entitlement, logger } = deps;
+  const { config, metering, entitlement, logger } = deps;
 
   // 1. Validate (before touching the entitlement store / metering).
   const invalid = validate(input);
@@ -190,13 +193,51 @@ export async function runSolve(
   // 2. AUTHORITATIVE routing: resolve the model from the server-side entitlement.
   //    The client-sent `plan` is IGNORED for routing.
   const ent = await entitlement.getEntitlement(input.userId);
-  const resolvedModel = resolveModelFromEntitlement(config, ent);
+  const resolved = resolveProviderFromEntitlement(config, ent);
+
+  // 2b. Vision guard: a text-only tier (e.g. deepseek-chat) cannot take photos.
+  //     Reject BEFORE metering so a misrouted request never costs a quota unit.
+  if (input.images.length > 0 && !resolved.supportsVision) {
+    logger
+      .child({
+        reqId: opts.reqId,
+        route: opts.route,
+        userId: input.userId,
+        plan: ent.plan,
+        provider: resolved.provider,
+        model: resolved.model,
+      })
+      .info("images rejected: tier model is text-only", {
+        code: "model_no_vision",
+        event: "validate",
+        imageCount: input.images.length,
+      });
+    await emit({
+      type: "error",
+      code: "model_no_vision",
+      message:
+        "The active model cannot read photos (text-only). Ask a text question or switch provider.",
+    });
+    return { metered: false };
+  }
+
+  const tutorModel = resolved.provider === "openai" ? deps.openAiModel : deps.model;
+  if (!tutorModel) {
+    await emit({
+      type: "error",
+      code: "internal_error",
+      message: "No upstream client configured for this provider.",
+    });
+    return { metered: false };
+  }
 
   const log = logger.child({
     reqId: opts.reqId,
     route: opts.route,
     userId: input.userId,
     plan: ent.plan, // the RESOLVED plan, not the claimed one
+    provider: resolved.provider,
+    model: resolved.model,
     imageCount: input.images.length,
   });
   const startedAt = Date.now();
@@ -208,7 +249,7 @@ export async function runSolve(
   const limit = ent.plan === "free" ? config.freeDailyQuota : Number.MAX_SAFE_INTEGER;
   const inc = await metering.incrementIfAllowed({
     userId: input.userId,
-    model: resolvedModel,
+    model: resolved.model,
     day,
     limit,
   });
@@ -216,7 +257,7 @@ export async function runSolve(
     log.info("quota exceeded", {
       code: "quota_exceeded",
       event: "meter",
-      model: resolvedModel,
+      model: resolved.model,
       used: inc.used,
       limit: inc.limit,
     });
@@ -229,7 +270,7 @@ export async function runSolve(
   }
   log.info("metered question", {
     event: "meter",
-    model: resolvedModel,
+    model: resolved.model,
     used: inc.used,
     limit: inc.limit,
     promptVersion: TUTOR_PROMPT_VERSION,
@@ -256,21 +297,22 @@ export async function runSolve(
     if (input.text) {
       userText += `\n\nFollow-up: ${input.text}`;
     }
-    const chunks = model.streamTutor({
-      model: resolvedModel,
+    const chunks = tutorModel.streamTutor({
+      model: resolved.model,
       system: TUTOR_SYSTEM_PROMPT,
       userText,
       images: input.images,
       maxTokens: MAX_TOKENS,
+      reasoningEffort: resolved.reasoningEffort,
     });
     for await (const chunk of chunks) {
       await parser.push(chunk.text);
     }
     const conclusion = await parser.finish();
-    await emit({ type: "done", conclusion, model: resolvedModel, metered: true });
+    await emit({ type: "done", conclusion, model: resolved.model, metered: true });
     log.info("solve complete", {
       event: "done",
-      model: resolvedModel,
+      model: resolved.model,
       durationMs: Date.now() - startedAt,
     });
     return { metered: true };
@@ -280,7 +322,7 @@ export async function runSolve(
     log.error("upstream error during stream", {
       event: "error",
       code: "upstream_error",
-      model: resolvedModel,
+      model: resolved.model,
       durationMs: Date.now() - startedAt,
     });
     await emit({

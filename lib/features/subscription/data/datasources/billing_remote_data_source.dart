@@ -8,7 +8,7 @@ import '../../../../core/storage/secure_token_store.dart';
 import '../../../../core/utils/logger.dart';
 import '../../domain/entities/subscription_status.dart';
 
-/// Raised when a store receipt has already been bound to a different account
+/// Raised when a store purchase has already been bound to a different account
 /// (proxy anti-replay returns HTTP 409). The UI surfaces a dedicated message.
 class ReceiptAlreadyUsedException implements Exception {
   final String message;
@@ -31,27 +31,21 @@ class BillingException implements Exception {
 /// Talks to the stateless proxy billing endpoints using `package:http`,
 /// mirroring [SolveClient]'s lightweight approach (dio is frozen at ^4 and
 /// reserved for legacy callers). All calls are authenticated with the account
-/// Bearer token from [SecureTokenStore] and use an 8s timeout; on any failure
-/// they throw (the subscription page already renders an offline/error state).
+/// Bearer token (Firebase ID token) from [SecureTokenStore] and use an 8s
+/// timeout; on any failure they throw (the subscription page already renders
+/// an offline/error state).
 ///
-/// Contract:
-/// * `POST {proxyBaseUrl}/billing/validate`
-///   body `{ platform: 'apple'|'google', receipt|purchaseToken, productId }`
-///   -> validates a store purchase, binds it to the account, returns status.
-///   Anti-replay: the same receipt on another account returns 409.
+/// Contract (Phase 3, RevenueCat-authoritative):
+/// * `POST {proxyBaseUrl}/billing/sync`
+///   body `{}` -> the proxy queries RevenueCat itself for this account's
+///   entitlement and persists it server-side. The client never sends
+///   receipts — the server only trusts its own RevenueCat lookup.
 /// * `GET  {proxyBaseUrl}/billing/status`
-///   -> `{ plan: 'free'|'paid', tier, expiresAt }`.
+///   -> `{ plan: 'free'|'paid', tier, expiresAt }` (server-authoritative).
 abstract class BillingRemoteDataSource {
-  /// Validates a freshly completed store purchase with the proxy and returns
-  /// the resulting (refreshed) [SubscriptionStatus].
-  ///
-  /// [platform] is 'apple' or 'google'. For Apple, [verificationData] is the
-  /// base64 App Store receipt; for Google it is the Play purchase token.
-  Future<SubscriptionStatus> validatePurchase({
-    required String platform,
-    required String productId,
-    required String verificationData,
-  });
+  /// Asks the proxy to re-read RevenueCat for this account and persist the
+  /// entitlement (call after a successful store purchase / restore).
+  Future<SubscriptionStatus> syncEntitlement();
 
   /// Fetches the current billing status for the signed-in account.
   Future<SubscriptionStatus> getStatus();
@@ -83,38 +77,26 @@ class BillingRemoteDataSourceImpl implements BillingRemoteDataSource {
   }
 
   @override
-  Future<SubscriptionStatus> validatePurchase({
-    required String platform,
-    required String productId,
-    required String verificationData,
-  }) async {
-    final uri = Uri.parse('${AppConfig.proxyBaseUrl}/billing/validate');
-
-    // Apple expects `receipt`, Google expects `purchaseToken` per the contract.
-    final body = <String, dynamic>{
-      'platform': platform,
-      'productId': productId,
-      if (platform == 'apple') 'receipt': verificationData,
-      if (platform == 'google') 'purchaseToken': verificationData,
-    };
+  Future<SubscriptionStatus> syncEntitlement() async {
+    final uri = Uri.parse('${AppConfig.proxyBaseUrl}/billing/sync');
 
     try {
       final response = await _client
           .post(
             uri,
             headers: await _authHeaders(json: true),
-            body: jsonEncode(body),
+            body: jsonEncode(const <String, dynamic>{}),
           )
           .timeout(_timeout);
 
       if (response.statusCode == 409) {
-        AppLogger.error('Billing validate rejected (409 anti-replay)');
+        AppLogger.error('Billing sync rejected (409 anti-replay)');
         throw const ReceiptAlreadyUsedException();
       }
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw BillingException(
-          '购买校验失败 (${response.statusCode})',
+          '订阅同步失败 (${response.statusCode})',
           statusCode: response.statusCode,
         );
       }
@@ -125,10 +107,10 @@ class BillingRemoteDataSourceImpl implements BillingRemoteDataSource {
     } on BillingException {
       rethrow;
     } on TimeoutException {
-      throw const BillingException('购买校验超时，请稍后重试');
+      throw const BillingException('订阅同步超时，请稍后重试');
     } catch (e) {
-      AppLogger.error('Billing validate failed', e);
-      throw BillingException('购买校验失败: $e');
+      AppLogger.error('Billing sync failed', e);
+      throw BillingException('订阅同步失败: $e');
     }
   }
 

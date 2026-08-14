@@ -3,11 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../../core/i18n/locale_cubit.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../settings/presentation/pages/model_settings_page.dart';
 
 /// Shows a bottom-sheet picker to switch the app language (跟随系统 / 中文 /
 /// English), persisted via [LocaleCubit].
@@ -45,9 +47,80 @@ Future<void> showLanguagePicker(BuildContext context) async {
   );
 }
 
+/// Shows the About bottom sheet: app identity, version and privacy policy.
+Future<void> _showAboutSheet(BuildContext context) async {
+  final l = AppLocalizations.of(context);
+  await showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: AppRadius.rHero),
+    ),
+    builder: (sheetContext) {
+      final theme = Theme.of(sheetContext);
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(AppRadius.card),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 32,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                l.appTitle,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                l.aboutVersion(AppConfig.appVersion),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const Divider(height: 1, color: AppColors.border),
+              // TODO(privacy): wire to https://auralearn.example.com/privacy
+              // once url_launcher is added to pubspec.yaml.
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.privacy_tip_outlined,
+                  size: 20,
+                  color: AppColors.textSecondary,
+                ),
+                title: Text(
+                  l.aboutPrivacy,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,10 +164,18 @@ class _GuestBody extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.account_circle_outlined,
-              size: 72,
-              color: AppColors.textHint,
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(AppRadius.hero),
+              ),
+              child: const Icon(
+                Icons.account_circle_outlined,
+                size: 44,
+                color: AppColors.primary,
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
@@ -123,7 +204,7 @@ class _GuestBody extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(vertical: AppSpacing.base),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    borderRadius: BorderRadius.circular(AppRadius.button),
                   ),
                 ),
                 child: Text(
@@ -162,6 +243,7 @@ class _AuthenticatedBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.base),
       child: Column(
@@ -173,15 +255,15 @@ class _AuthenticatedBody extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.border),
-              boxShadow: AppShadows.card,
+              boxShadow: AppShadows.soft,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '账号信息',
+                  l.profileAccountInfo,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
@@ -229,63 +311,58 @@ class _AuthenticatedBody extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.border),
-              boxShadow: AppShadows.card,
+              boxShadow: AppShadows.soft,
             ),
             child: Column(
               children: [
                 _ActionTile(
                   icon: Icons.language_rounded,
-                  label: AppLocalizations.of(context).settingsLanguage,
+                  label: l.settingsLanguage,
                   onTap: () => showLanguagePicker(context),
                 ),
                 const Divider(height: 1, color: AppColors.border),
                 _ActionTile(
                   icon: Icons.settings_outlined,
-                  label: '设置',
+                  label: l.profileSettings,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('设置页面即将上线')),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ModelSettingsPage(),
+                      ),
                     );
                   },
                 ),
-                const Divider(height: 1, color: AppColors.border),
-                _ActionTile(
-                  icon: Icons.help_outline_rounded,
-                  label: '帮助与支持',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('帮助页面即将上线')),
-                    );
-                  },
-                ),
+                // TODO(support): re-enable once the help & support page ships.
+                // const Divider(height: 1, color: AppColors.border),
+                // _ActionTile(
+                //   icon: Icons.help_outline_rounded,
+                //   label: l.profileHelp,
+                //   onTap: () { /* navigate to help & support */ },
+                // ),
                 const Divider(height: 1, color: AppColors.border),
                 _ActionTile(
                   icon: Icons.info_outline_rounded,
-                  label: '关于',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('关于页面即将上线')),
-                    );
-                  },
+                  label: l.profileAbout,
+                  onTap: () => _showAboutSheet(context),
                 ),
                 const Divider(height: 1, color: AppColors.border),
                 _ActionTile(
                   icon: Icons.logout_rounded,
-                  label: '退出登录',
+                  label: l.profileLogout,
                   labelColor: AppColors.error,
                   iconColor: AppColors.error,
                   onTap: () {
                     showDialog(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('退出登录'),
-                        content: const Text('确定要退出登录吗？'),
+                        title: Text(l.profileLogout),
+                        content: Text(l.profileLogoutConfirm),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(ctx).pop(),
-                            child: const Text('取消'),
+                            child: Text(l.commonCancel),
                           ),
                           TextButton(
                             onPressed: () {
@@ -294,9 +371,9 @@ class _AuthenticatedBody extends StatelessWidget {
                                   .add(AuthLogoutRequested());
                               Navigator.of(ctx).pop();
                             },
-                            child: const Text(
-                              '退出',
-                              style: TextStyle(color: AppColors.error),
+                            child: Text(
+                              l.profileLogoutAction,
+                              style: const TextStyle(color: AppColors.error),
                             ),
                           ),
                         ],

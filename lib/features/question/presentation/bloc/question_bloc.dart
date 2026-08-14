@@ -7,13 +7,13 @@ import 'question_state.dart';
 import '../../data/datasources/question_local_data_source.dart';
 import '../../data/models/question_response.dart';
 import '../../domain/usecases/submit_question_usecase.dart';
-import '../../../../core/network/streaming/solve_client.dart';
+import '../../../../core/llm/solve_service.dart';
 import '../../../../core/network/streaming/solve_event.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Bloc driving the streaming `/solve` flow.
 ///
-/// Streaming model: [QuestionSolveRequested] opens a [SolveClient.solve]
+/// Streaming model: [QuestionSolveRequested] opens a [SolveService.solve]
 /// stream. Each [SolveEvent] is bridged back through the bloc's own event queue
 /// (via [QuestionSolveEventReceived]) so all `emit`s stay sequential and the
 /// subscription can be cancelled deterministically on a new submit or on
@@ -26,7 +26,7 @@ import '../../../../core/utils/logger.dart';
 /// step. A resume token is deferred to a later phase.
 class QuestionBloc extends Bloc<QuestionEvent, QuestionState> {
   final SubmitQuestionUseCase submitQuestionUseCase;
-  final SolveClient solveClient;
+  final SolveService solveService;
   final QuestionLocalDataSource localDataSource;
 
   StreamSubscription<SolveEvent>? _solveSubscription;
@@ -40,7 +40,7 @@ class QuestionBloc extends Bloc<QuestionEvent, QuestionState> {
 
   QuestionBloc({
     required this.submitQuestionUseCase,
-    required this.solveClient,
+    required this.solveService,
     required this.localDataSource,
   }) : super(QuestionInitial()) {
     on<QuestionSolveRequested>(_onSolveRequested);
@@ -64,17 +64,11 @@ class QuestionBloc extends Bloc<QuestionEvent, QuestionState> {
 
     emit(QuestionSolveInProgress());
 
-    // TODO(Phase C): replace the placeholder dev token + hardcoded plan with the
-    // real account JWT + entitlement plan resolved from auth. For A0 metering is
-    // an abuse/rate guard only and the proxy accepts a dev token.
-    const devToken = 'dev-placeholder-token';
-    const plan = 'free';
-
-    final stream = solveClient.solve(
+    // The SolveService picks subscription-proxy vs BYOK-direct from the
+    // persisted ModelConfig; token/key handling lives there.
+    final stream = solveService.solve(
       images: event.images,
       subject: event.subject,
-      plan: plan,
-      token: devToken,
     );
 
     _solveSubscription = stream.listen(
@@ -241,7 +235,7 @@ class QuestionBloc extends Bloc<QuestionEvent, QuestionState> {
   @override
   Future<void> close() async {
     await _solveSubscription?.cancel();
-    solveClient.close();
+    solveService.close();
     return super.close();
   }
 }

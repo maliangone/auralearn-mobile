@@ -696,6 +696,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguage => 'Language';
 
   @override
+  String get settingsModelMode => 'Answer mode';
+
+  @override
+  String get settingsModeSubscription => 'AuraLearn subscription';
+
+  @override
+  String get settingsModeSubscriptionDesc =>
+      'Uses the app\'s own model service; daily limits apply.';
+
+  @override
+  String get settingsModeByok => 'Bring your own key';
+
+  @override
+  String get settingsModeByokDesc =>
+      'Calls the model vendor directly from this device with your own API key.';
+
+  @override
+  String get settingsByokProvider => 'Provider';
+
+  @override
+  String get settingsByokApiKey => 'API key';
+
+  @override
+  String get settingsByokApiKeyHint => 'Paste your vendor API key';
+
+  @override
+  String get settingsByokApiKeyStored => 'A key is saved for this provider';
+
+  @override
+  String get settingsByokBaseUrl => 'Base URL';
+
+  @override
+  String get settingsByokModel => 'Model';
+
+  @override
+  String get settingsByokModelHint => 'Model ID, e.g. gpt-5.6-luna';
+
+  @override
+  String get settingsByokReasoningEffort => 'Reasoning effort (optional)';
+
+  @override
+  String get settingsByokNoVision =>
+      'This provider\'s official API does not support photos — photo solving is unavailable; text questions still work.';
+
+  @override
+  String get settingsByokTest => 'Test connection';
+
+  @override
+  String get settingsByokTestOk => 'Connection OK';
+
+  @override
+  String settingsByokTestFailed(String error) {
+    return 'Connection failed: $error';
+  }
+
+  @override
+  String get settingsByokSaved => 'Saved';
+
+  @override
+  String get settingsByokMissing =>
+      'Fill in base URL, model and API key first.';
+
+  @override
   String get languageSystem => 'Follow system';
 
   @override

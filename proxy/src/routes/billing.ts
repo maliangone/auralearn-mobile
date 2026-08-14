@@ -1,128 +1,90 @@
 /**
- * Billing / IAP routes (Phase C) — plain JSON (NOT SSE).
+ * Billing routes (Phase 3, RevenueCat-authoritative) — plain JSON (NOT SSE).
  *
- *   POST /billing/validate  -> verify a store receipt, bind it, grant entitlement.
- *   GET  /billing/status    -> the authed user's current entitlement.
+ *   POST /billing/sync  -> the server queries RevenueCat itself for this
+ *                          account's entitlement and persists it. The client
+ *                          sends an EMPTY body — it never sends receipts.
+ *   GET  /billing/status -> the authed user's persisted entitlement.
  *
- * Anti-replay / cross-account (Critic M3): a receipt is bound to exactly one
- * userId. If the derived receiptId is already owned by a DIFFERENT user, the
- * request is rejected with 409 receipt_already_bound — one purchase cannot
- * entitle many accounts. Re-presenting the SAME receipt by its OWNER is idempotent
- * (a restore).
- *
- * All responses are content-free metadata. The store credentials needed for REAL
- * verification are guarded behind env; absent => deterministic mock (documented).
+ * The RevenueCat webhook (routes/webhook.ts) is the push channel for
+ * renewals/expirations; /billing/sync is the pull channel after a fresh
+ * purchase. All responses are content-free metadata.
  */
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { AppConfig } from "../config.js";
-import type { EntitlementStore, Entitlement } from "../lib/entitlement.js";
+import type { EntitlementStore } from "../lib/entitlement.js";
 import type { Logger } from "../lib/logger.js";
-import type {
-  ReceiptVerifier,
-  ReceiptVerifyRequest,
-  Platform,
-} from "../lib/receipt-verifier.js";
-import { verifyAuth } from "../lib/auth.js";
-import { productIdToTier } from "../lib/receipt-verifier.js";
+import type { RevenueCatClient } from "../lib/revenuecat.js";
+import type { FirebaseAuthConfig } from "../lib/firebase-auth.js";
+import { verifyAuth } from "../lib/firebase-auth.js";
 
 export interface BillingRouteDeps {
   config: AppConfig;
   entitlement: EntitlementStore;
-  receiptVerifier: ReceiptVerifier;
+  revenuecat: RevenueCatClient;
+  /** Auth config mirroring the solve routes (Firebase ID token / dev / legacy). */
+  auth: FirebaseAuthConfig;
   logger: Logger;
 }
 
-interface ValidateBody {
-  platform?: string;
-  receipt?: string;
-  purchaseToken?: string;
-  productId?: string;
+async function authOf(
+  deps: BillingRouteDeps,
+  request: FastifyRequest,
+): Promise<{ ok: true; userId: string } | { ok: false }> {
+  return verifyAuth(request.headers["authorization"], deps.auth);
 }
 
-function authOf(deps: BillingRouteDeps, request: FastifyRequest) {
-  return verifyAuth(request.headers["authorization"], {
-    accountsJwtSecret: deps.config.accountsJwtSecret,
-    devAuthToken: deps.config.devAuthToken,
-  });
-}
-
-async function handleValidate(
+async function handleSync(
   deps: BillingRouteDeps,
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
   const reqId = (request.id as string) ?? undefined;
-  const auth = authOf(deps, request);
+  const auth = await authOf(deps, request);
   if (!auth.ok) {
     deps.logger.info("billing auth failed", {
       reqId,
-      route: "/billing/validate",
+      route: "/billing/sync",
       code: "unauthorized",
       event: "auth",
     });
     await reply.code(401).send({ code: "unauthorized", message: "Authentication required." });
     return;
   }
-  const log = deps.logger.child({ reqId, route: "/billing/validate", userId: auth.userId });
+  const log = deps.logger.child({ reqId, route: "/billing/sync", userId: auth.userId });
 
-  const body = (request.body ?? {}) as ValidateBody;
-  const platform = body.platform;
-  if (platform !== "apple" && platform !== "google") {
-    await reply
-      .code(400)
-      .send({ code: "bad_request", message: "platform must be 'apple' or 'google'" });
-    return;
-  }
-  if (typeof body.productId !== "string" || body.productId.trim() === "") {
-    await reply.code(400).send({ code: "bad_request", message: "productId is required" });
-    return;
-  }
-
-  const verifyReq: ReceiptVerifyRequest = {
-    platform: platform as Platform,
-    receipt: typeof body.receipt === "string" ? body.receipt : undefined,
-    purchaseToken: typeof body.purchaseToken === "string" ? body.purchaseToken : undefined,
-    productId: body.productId,
-  };
-
-  const result = await deps.receiptVerifier.verify(verifyReq);
-  if (!result.ok) {
-    const status = result.code === "bad_request" ? 400 : 402;
-    log.info("receipt rejected", { event: "billing", code: result.code, status });
-    await reply.code(status).send({ code: result.code, message: result.message });
-    return;
-  }
-
-  // Anti-replay / cross-account binding.
-  const existingOwner = await deps.entitlement.getReceiptOwner(result.receiptId);
-  if (existingOwner !== undefined && existingOwner !== auth.userId) {
-    log.warn("receipt already bound to another account", {
-      event: "billing",
-      code: "receipt_already_bound",
-      status: 409,
-    });
-    await reply.code(409).send({
-      code: "receipt_already_bound",
-      message: "This purchase is already linked to a different account.",
+  // The body is intentionally ignored: the client cannot assert its own
+  // entitlement — the server only trusts its own RevenueCat lookup.
+  let subscriber;
+  try {
+    subscriber = await deps.revenuecat.getSubscriber(auth.userId);
+  } catch (err) {
+    log.error("revenuecat lookup failed", { event: "billing", code: "upstream_error" });
+    await reply.code(502).send({
+      code: "upstream_error",
+      message: "Could not reach the subscription service. Try again.",
     });
     return;
   }
 
-  // Bind (idempotent for the same owner) and grant entitlement.
-  await deps.entitlement.bindReceipt(result.receiptId, auth.userId);
-  const entitlement: Entitlement = {
-    plan: "paid",
-    tier: productIdToTier(result.productId),
-    expiresAt: result.expiresAt,
+  const entitlement = {
+    plan: subscriber.plan,
+    tier: subscriber.tier,
+    ...(typeof subscriber.expiresAt === "number"
+      ? { expiresAt: subscriber.expiresAt }
+      : {}),
   };
   await deps.entitlement.setEntitlement(auth.userId, entitlement);
 
-  log.info("entitlement granted", { event: "billing", status: 200 });
-  await reply.code(200).send({
-    ok: true,
-    entitlement,
+  log.info("entitlement synced", {
+    event: "billing",
+    plan: entitlement.plan,
+    status: 200,
   });
+  // Client contract: { plan, tier, expiresAt } at the TOP level (the billing
+  // datasource parses these fields directly).
+  await reply.code(200).send({ ok: true, ...entitlement });
 }
 
 async function handleStatus(
@@ -131,7 +93,7 @@ async function handleStatus(
   reply: FastifyReply,
 ): Promise<void> {
   const reqId = (request.id as string) ?? undefined;
-  const auth = authOf(deps, request);
+  const auth = await authOf(deps, request);
   if (!auth.ok) {
     await reply.code(401).send({ code: "unauthorized", message: "Authentication required." });
     return;
@@ -145,10 +107,11 @@ async function handleStatus(
     event: "billing",
     status: 200,
   });
-  await reply.code(200).send({ entitlement: ent });
+  // Client contract: { plan, tier, expiresAt } at the TOP level.
+  await reply.code(200).send({ ...ent });
 }
 
 export function registerBillingRoutes(app: FastifyInstance, deps: BillingRouteDeps): void {
-  app.post("/billing/validate", (req, reply) => handleValidate(deps, req, reply));
+  app.post("/billing/sync", (req, reply) => handleSync(deps, req, reply));
   app.get("/billing/status", (req, reply) => handleStatus(deps, req, reply));
 }

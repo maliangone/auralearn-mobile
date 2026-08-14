@@ -77,4 +77,6 @@ export type ErrorCode =
   | "unauthorized"
   | "bad_request"
   | "upstream_error"
-  | "internal_error";
+  | "internal_error"
+  /** The resolved tier model is text-only but the request carried images. */
+  | "model_no_vision";

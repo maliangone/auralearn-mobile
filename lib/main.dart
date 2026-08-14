@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/config/app_config.dart';
+import 'core/firebase/firebase_bootstrap.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/injection_container.dart';
 import 'core/i18n/locale_cubit.dart';
@@ -19,10 +20,14 @@ import 'features/history/presentation/bloc/history_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Firebase Auth (app account identity) — no-op until the FIREBASE_*
+  // dart-defines are supplied; the app stays fully usable in dev without it.
+  await FirebaseBootstrap.ensureInitialized();
+
   // Initialize Hive
   await Hive.initFlutter();
-  
+
   // Initialize dependency injection
   await setupDependencies();
   

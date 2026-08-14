@@ -74,50 +74,7 @@ export class InMemoryEntitlementStore implements EntitlementStore {
   }
 }
 
-/**
- * Persistent store (DOCUMENTED STUB for production — Redis / SQL).
- *
- * Schema (content-free):
- *   entitlement:{userId} -> JSON { plan, tier, expiresAt }
- *   receipt:{receiptId}  -> userId   (UNIQUE — enforces one receipt = one account)
- *
- * Binding MUST be atomic to fully close the cross-account race: use Redis
- * `SET receipt:{id} {userId} NX` (set-if-absent) and treat a failed NX as
- * "already bound" — then compare the existing owner. In SQL, a UNIQUE constraint
- * on receiptId + an upsert achieves the same. The route layer does a
- * getReceiptOwner check first; the NX/UNIQUE guard is the last-writer safety net.
- *
- * Not wired to a live client here (no REDIS_URL/db in this lane); implement the
- * four methods against your client in production.
- */
-export class PersistentEntitlementStore implements EntitlementStore {
-  constructor(private readonly _connectionUrl: string) {}
-
-  private fail(method: string): never {
-    throw new Error(
-      `PersistentEntitlementStore.${method} is a documented stub. Wire it to your ` +
-        `Redis/SQL client (see schema in lib/entitlement.ts). Connection was: ${this._connectionUrl}`,
-    );
-  }
-
-  async getEntitlement(_userId: string): Promise<Entitlement> {
-    this.fail("getEntitlement");
-  }
-  async setEntitlement(_userId: string, _ent: Entitlement): Promise<void> {
-    this.fail("setEntitlement");
-  }
-  async bindReceipt(_receiptId: string, _userId: string): Promise<void> {
-    this.fail("bindReceipt");
-  }
-  async getReceiptOwner(_receiptId: string): Promise<string | undefined> {
-    this.fail("getReceiptOwner");
-  }
-}
-
-/** Factory: persistent store when a connection URL is configured, else in-memory. */
-export function createEntitlementStore(connectionUrl: string | undefined): EntitlementStore {
-  if (connectionUrl) {
-    return new PersistentEntitlementStore(connectionUrl);
-  }
+/** Factory: in-memory store (dev/test). Production wires FirestoreEntitlementStore. */
+export function createEntitlementStore(): EntitlementStore {
   return new InMemoryEntitlementStore();
 }

@@ -81,69 +81,50 @@ void main() {
     });
   });
 
-  group('BillingRemoteDataSource.validatePurchase', () {
-    test('sends purchaseToken for google and returns refreshed status',
+  group('BillingRemoteDataSource.syncEntitlement', () {
+    test('POSTs an empty body to /billing/sync (server queries RevenueCat)',
         () async {
       final client = MockClient((request) async {
-        expect(request.url.path, '/billing/validate');
+        expect(request.method, 'POST');
+        expect(request.url.path, '/billing/sync');
+        expect(request.headers['Authorization'], 'Bearer tok-123');
+        // The client never sends receipts — the server only trusts its own
+        // RevenueCat lookup.
         final body = jsonDecode(request.body) as Map<String, dynamic>;
-        expect(body['platform'], 'google');
-        expect(body['productId'], 'auralearn_pro_monthly');
-        expect(body['purchaseToken'], 'token-abc');
-        expect(body.containsKey('receipt'), isFalse);
+        expect(body, isEmpty);
         return http.Response(jsonEncode({'plan': 'paid'}), 200);
       });
 
       final ds = BillingRemoteDataSourceImpl(
-        tokenStore: _FakeTokenStore('tok'),
+        tokenStore: _FakeTokenStore('tok-123'),
         client: client,
       );
 
-      final status = await ds.validatePurchase(
-        platform: 'google',
-        productId: 'auralearn_pro_monthly',
-        verificationData: 'token-abc',
-      );
+      final status = await ds.syncEntitlement();
       expect(status.isPaid, isTrue);
     });
 
-    test('sends receipt for apple', () async {
-      final client = MockClient((request) async {
-        final body = jsonDecode(request.body) as Map<String, dynamic>;
-        expect(body['platform'], 'apple');
-        expect(body['receipt'], 'base64-receipt');
-        expect(body.containsKey('purchaseToken'), isFalse);
-        return http.Response(jsonEncode({'plan': 'paid'}), 200);
-      });
-
+    test('returns refreshed free status after sync', () async {
+      final client = MockClient(
+        (_) async => http.Response(jsonEncode({'plan': 'free'}), 200),
+      );
       final ds = BillingRemoteDataSourceImpl(
         tokenStore: _FakeTokenStore('tok'),
         client: client,
       );
 
-      final status = await ds.validatePurchase(
-        platform: 'apple',
-        productId: 'auralearn_pro_monthly',
-        verificationData: 'base64-receipt',
-      );
-      expect(status.isPaid, isTrue);
+      final status = await ds.syncEntitlement();
+      expect(status.isFree, isTrue);
     });
 
-    test('throws ReceiptAlreadyUsedException on 409 anti-replay', () async {
-      final client = MockClient((_) async => http.Response('conflict', 409));
+    test('throws BillingException on non-2xx sync', () async {
+      final client = MockClient((_) async => http.Response('nope', 500));
       final ds = BillingRemoteDataSourceImpl(
         tokenStore: _FakeTokenStore('tok'),
         client: client,
       );
 
-      expect(
-        ds.validatePurchase(
-          platform: 'google',
-          productId: 'auralearn_pro_monthly',
-          verificationData: 'dup',
-        ),
-        throwsA(isA<ReceiptAlreadyUsedException>()),
-      );
+      expect(ds.syncEntitlement(), throwsA(isA<BillingException>()));
     });
   });
 }

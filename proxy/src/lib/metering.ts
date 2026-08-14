@@ -96,62 +96,7 @@ export class InMemoryMeteringStore implements MeteringStore {
   }
 }
 
-/**
- * Redis-backed store (DOCUMENTED STUB for Phase A1/production).
- *
- * Why a Lua script and not a bare INCR: we need a single atomic round-trip that
- * (1) reads the counter, (2) denies if it is already >= limit (WITHOUT
- * incrementing — otherwise an over-limit user keeps inflating the counter), and
- * (3) increments + sets a TTL to the end of the UTC day otherwise. A bare
- * `INCR then compare` would over-count denied requests and would need two
- * round-trips. The Lua script runs atomically server-side:
- *
- *   -- KEYS[1] = "meter:{userId}:{day}"
- *   -- ARGV[1] = limit, ARGV[2] = ttlSeconds
- *   local current = tonumber(redis.call('GET', KEYS[1]) or '0')
- *   if current >= tonumber(ARGV[1]) then
- *     return {0, current}            -- denied, not incremented
- *   end
- *   local next = redis.call('INCR', KEYS[1])
- *   if next == 1 then
- *     redis.call('EXPIRE', KEYS[1], tonumber(ARGV[2]))
- *   end
- *   return {1, next}                 -- allowed, post-increment value
- *
- * The model is stored separately (or encoded in a parallel key) — the metering
- * record MUST stay { userId, model, count, day } with NO content.
- *
- * This stub is intentionally NOT wired to a live client in A0 (REDIS_URL blank →
- * server uses InMemoryMeteringStore). Implement `incrementIfAllowed` against your
- * Redis client (ioredis/node-redis) using EVAL with the script above in Phase A1.
- */
-export class RedisMeteringStore implements MeteringStore {
-  // The concrete redis client type is intentionally left as unknown to avoid a
-  // hard dependency in A0. Wire it in Phase A1.
-  constructor(private readonly _redisUrl: string) {}
-
-  async incrementIfAllowed(_args: {
-    userId: string;
-    model: string;
-    day: string;
-    limit: number;
-  }): Promise<IncrementResult> {
-    throw new Error(
-      "RedisMeteringStore is a documented stub (Phase A1). Wire EVAL of the Lua " +
-        "check-and-increment script described in lib/metering.ts. REDIS_URL was: " +
-        this._redisUrl,
-    );
-  }
-
-  async peek(_userId: string, _day: string): Promise<MeteringRecord | undefined> {
-    throw new Error("RedisMeteringStore.peek is a documented stub (Phase A1).");
-  }
-}
-
-/** Factory: choose the store based on whether REDIS_URL is configured. */
-export function createMeteringStore(redisUrl: string | undefined): MeteringStore {
-  if (redisUrl) {
-    return new RedisMeteringStore(redisUrl);
-  }
+/** Factory: in-memory store (dev/test). Production wires FirestoreMeteringStore. */
+export function createMeteringStore(): MeteringStore {
   return new InMemoryMeteringStore();
 }
