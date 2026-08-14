@@ -4,12 +4,17 @@ import 'tokens.dart';
 
 /// AuraLearn ThemeData factory.
 ///
-/// Direction: Light-first, Linear/Notion restraint.
+/// Direction v2: warm & friendly — keeps the light, trustworthy base and adds
+/// softer radii, colour-tinted clay shadows and a rounded display font.
 /// Color: near-white bg (#F8F9FC), indigo primary (#4F6EF7), warm encourage green (#22C55E).
-/// Typography: default platform font (CupertinoSystemText / Roboto) — no asset dependency.
+/// Typography: Baloo 2 for Latin/digits (bundled asset) with automatic system
+/// fallback for CJK glyphs — no runtime font download.
 /// All design values sourced from tokens.dart; do not hardcode colors here.
 class AppTheme {
   AppTheme._();
+
+  /// Bundled display font family (see pubspec fonts section).
+  static const String fontFamily = 'Baloo2';
 
   // ---------------------------------------------------------------------------
   // Colour aliases — keep these so existing code that references AppTheme.*
@@ -125,10 +130,10 @@ class AppTheme {
             vertical: AppSpacing.base,
           ),
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(AppRadius.rMd),
+            borderRadius: BorderRadius.all(AppRadius.rButton),
           ),
           textStyle: const TextStyle(
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
             letterSpacing: 0,
           ),
@@ -145,7 +150,7 @@ class AppTheme {
             vertical: AppSpacing.base,
           ),
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(AppRadius.rMd),
+            borderRadius: BorderRadius.all(AppRadius.rButton),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
@@ -177,23 +182,23 @@ class AppTheme {
         filled: true,
         fillColor: AppColors.surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.button),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.button),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.button),
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.button),
           borderSide: const BorderSide(color: AppColors.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.button),
           borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
@@ -216,7 +221,7 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           side: const BorderSide(color: AppColors.border, width: 1),
         ),
       ),
@@ -232,7 +237,7 @@ class AppTheme {
         ),
         side: const BorderSide(color: AppColors.border),
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(AppRadius.rSm),
+          borderRadius: BorderRadius.all(AppRadius.rChip),
         ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.sm,
@@ -293,28 +298,15 @@ class AppTheme {
       ),
 
       // --- Typography ---
-      textTheme: _textTheme,
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // Dark theme — stub; light palette dominates v1
-  // ---------------------------------------------------------------------------
-  static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        brightness: Brightness.dark,
-      ),
-      textTheme: _textTheme,
+      // Baloo 2 covers Latin/digits with a friendly rounded voice; CJK glyphs
+      // automatically fall back to the platform font (PingFang / Noto Sans CJK).
+      textTheme: _textTheme.apply(fontFamily: fontFamily),
     );
   }
 
   // ---------------------------------------------------------------------------
   // Text theme
-  // Platform default font (San Francisco on iOS, Roboto on Android).
-  // No pubspec asset dependency.
+  // Font family is applied via TextTheme.apply() in lightTheme.
   // ---------------------------------------------------------------------------
   static const TextTheme _textTheme = TextTheme(
     displayLarge: TextStyle(
@@ -404,7 +396,7 @@ class AppTheme {
       color: AppColors.textPrimary,
     ),
     labelSmall: TextStyle(
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: FontWeight.w500,
       color: AppColors.textSecondary,
       letterSpacing: 0.2,

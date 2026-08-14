@@ -80,6 +80,7 @@ dependencies:
   connectivity_plus: ^5.0.2
   get_it: ^7.6.4
   device_info_plus: ^9.1.1
+  url_launcher: ^6.2.5
 
   # UI Components
   flutter_keyboard_visibility: ^6.0.0
@@ -109,14 +110,21 @@ flutter:
     - assets/icons/
     - assets/animations/
     - assets/fonts/
+    - assets/illustrations/
+    - assets/onboarding/
+    - assets/brand/
 
-  # fonts:
-  #   - family: Inter
-  #     fonts:
-  #       - asset: assets/fonts/Inter-Regular.ttf
-  #       - asset: assets/fonts/Inter-Medium.ttf
-  #         weight: 500
-  #       - asset: assets/fonts/Inter-SemiBold.ttf
-  #         weight: 600
-  #       - asset: assets/fonts/Inter-Bold.ttf
-  #         weight: 700 
+  fonts:
+    # Baloo 2 — friendly rounded display font for Latin/digits.
+    # CJK glyphs fall back to the platform font automatically.
+    # OFL licensed; static instances derived from the variable font.
+    - family: Baloo2
+      fonts:
+        - asset: assets/fonts/Baloo2-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Baloo2-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Baloo2-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Baloo2-Bold.ttf
+          weight: 700 

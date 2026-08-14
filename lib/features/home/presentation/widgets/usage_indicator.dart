@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/tokens.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 
+/// Monthly-usage card shown on the home screen for signed-in users.
+/// Near-limit states escalate colour from indigo → amber.
 class UsageIndicator extends StatelessWidget {
   const UsageIndicator({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
         if (authState is! AuthAuthenticated) {
@@ -19,138 +24,131 @@ class UsageIndicator extends StatelessWidget {
         final user = authState.user;
         final usagePercentage = user.usagePercentage;
         final isNearLimit = user.isNearLimit;
+        final accent = isNearLimit ? AppColors.warning : AppColors.primary;
 
         return Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            gradient: isNearLimit 
-                ? LinearGradient(
-                    colors: [AppTheme.warning.withOpacity(0.1), AppTheme.error.withOpacity(0.1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : AppTheme.cardGradient,
-            borderRadius: BorderRadius.circular(16),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(
-              color: isNearLimit ? AppTheme.warning : AppTheme.border,
-              width: isNearLimit ? 2 : 1,
+              color: isNearLimit ? AppColors.warning : AppColors.border,
+              width: isNearLimit ? 1.5 : 1,
             ),
+            boxShadow: AppShadows.soft,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.analytics_outlined,
-                    color: isNearLimit ? AppTheme.warning : AppTheme.primary,
-                    size: 24,
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Icon(Icons.analytics_outlined, color: accent, size: 22),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Monthly Usage',
+                          l.usageTitle,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         Text(
-                          '${user.usageCount} / ${user.monthlyLimit} questions',
+                          l.usageQuestions(user.usageCount, user.monthlyLimit),
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.textSecondary,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xs + 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: _getPlanColor(user.subscriptionPlan).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _getPlanColor(user.subscriptionPlan),
-                      ),
+                      color: _planColor(user.subscriptionPlan)
+                          .withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(AppRadius.hero),
                     ),
                     child: Text(
-                      _getPlanDisplayName(user.subscriptionPlan),
+                      _planName(l, user.subscriptionPlan),
                       style: TextStyle(
-                        color: _getPlanColor(user.subscriptionPlan),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
+                        color: _planColor(user.subscriptionPlan),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        letterSpacing: 0.4,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Progress bar
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${(usagePercentage * 100).toInt()}% used',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      if (isNearLimit)
-                        Text(
-                          'Almost full!',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.warning,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    value: usagePercentage,
-                    backgroundColor: AppTheme.border,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isNearLimit ? AppTheme.warning : AppTheme.primary,
-                    ),
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(4),
                   ),
                 ],
               ),
 
+              const SizedBox(height: AppSpacing.base),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l.usagePercentUsed((usagePercentage * 100).toInt()),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (isNearLimit)
+                    Text(
+                      l.usageAlmostFull,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.warningDark,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              LinearProgressIndicator(
+                value: usagePercentage,
+                backgroundColor: AppColors.border,
+                valueColor: AlwaysStoppedAnimation<Color>(accent),
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(AppRadius.xs),
+              ),
+
               if (isNearLimit) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.base),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: AppTheme.warning.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.warning.withOpacity(0.3)),
+                    color: AppColors.warningLight,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.warning_amber,
-                        color: AppTheme.warning,
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: AppColors.warningDark,
                         size: 20,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
-                          user.subscriptionPlan == 'free' 
-                              ? 'Upgrade to continue asking questions'
-                              : 'Consider upgrading for more questions',
+                          user.subscriptionPlan == 'free'
+                              ? l.usageUpgradeHintFree
+                              : l.usageUpgradeHintPaid,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.warning,
+                            color: AppColors.warningDark,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -161,19 +159,12 @@ class UsageIndicator extends StatelessWidget {
               ],
 
               if (user.subscriptionPlan == 'free') ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.base),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: () {
-                      // Navigate to subscription page
-                      // context.go('/subscription');
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primary,
-                      side: const BorderSide(color: AppTheme.primary),
-                    ),
-                    child: const Text('Upgrade Plan'),
+                    onPressed: () => context.goNamed('subscription'),
+                    child: Text(l.usageUpgradeButton),
                   ),
                 ),
               ],
@@ -184,29 +175,27 @@ class UsageIndicator extends StatelessWidget {
     );
   }
 
-  Color _getPlanColor(String plan) {
+  Color _planColor(String plan) {
     switch (plan.toLowerCase()) {
-      case 'free':
-        return AppTheme.textSecondary;
       case 'standard':
-        return AppTheme.primary;
+        return AppColors.primary;
       case 'pro':
-        return AppTheme.accent;
+        return AppColors.warningDark;
+      case 'free':
       default:
-        return AppTheme.textSecondary;
+        return AppColors.textSecondary;
     }
   }
 
-  String _getPlanDisplayName(String plan) {
+  String _planName(AppLocalizations l, String plan) {
     switch (plan.toLowerCase()) {
-      case 'free':
-        return 'FREE';
       case 'standard':
-        return 'STANDARD';
+        return l.planStandard;
       case 'pro':
-        return 'PRO';
+        return l.planPro;
+      case 'free':
       default:
-        return plan.toUpperCase();
+        return l.planFree;
     }
   }
-} 
+}

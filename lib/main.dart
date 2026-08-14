@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:go_router/go_router.dart';
 
 import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
@@ -77,17 +76,20 @@ class AuraLearnApp extends StatelessWidget {
             title: AppConfig.appName,
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
+            // Light-only by design (K-12 palette); no dark theme shipped yet.
             themeMode: ThemeMode.light,
             locale: locale, // null = follow system
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             routerConfig: AppRouter.router,
             builder: (context, child) {
+              // Respect OS text scaling, clamped to a layout-safe band.
+              final scaler = MediaQuery.textScalerOf(context).clamp(
+                minScaleFactor: 0.85,
+                maxScaleFactor: 1.3,
+              );
               return MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                  textScaleFactor: 1.0, // Disable user text scaling
-                ),
+                data: MediaQuery.of(context).copyWith(textScaler: scaler),
                 child: child!,
               );
             },

@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/utils/time_ago.dart';
+import '../../../../core/widgets/app_empty_state.dart';
+import '../../../../core/widgets/app_pressable.dart';
+import '../../../../core/widgets/app_section_header.dart';
+import '../../../../core/widgets/skeleton_box.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -30,12 +36,13 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     context.read<SubscriptionBloc>().add(SubscriptionStatusRequested());
-    // Load real history for the "最近解题" section (latest 3 shown).
+    // Load real history for the recent section (latest 3 shown).
     context.read<HistoryBloc>().add(const HistoryLoadRequested());
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -46,7 +53,7 @@ class _HomePageState extends State<HomePage> {
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               // ----------------------------------------------------------------
-              // App bar: greeting
+              // App bar: greeting + mascot
               // ----------------------------------------------------------------
               SliverAppBar(
                 floating: true,
@@ -58,25 +65,15 @@ class _HomePageState extends State<HomePage> {
                 title: BlocBuilder<AuthBloc, AuthState>(
                   builder: (context, state) {
                     final name = state is AuthAuthenticated
-                        ? (state.user.name?.split(' ').first ?? '同学')
-                        : '同学';
+                        ? (state.user.name?.split(' ').first ??
+                            l.greetingDefaultName)
+                        : l.greetingDefaultName;
                     return _GreetingHeader(name: name);
                   },
                 ),
                 titleSpacing: AppSpacing.base,
-                actions: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.notifications_outlined,
-                      size: 22,
-                    ),
-                    color: AppColors.textSecondary,
-                    onPressed: () {
-                      // TODO: notifications
-                    },
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                ],
+                // TODO(notifications): bell icon removed until the feature
+                // exists — an inert icon reads as a broken button.
               ),
 
               // ----------------------------------------------------------------
@@ -91,7 +88,7 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: AnimationConfiguration.toStaggeredList(
-                        duration: const Duration(milliseconds: 320),
+                        duration: AppMotion.staggered,
                         childAnimationBuilder: (widget) => SlideAnimation(
                           verticalOffset: 24.0,
                           child: FadeInAnimation(child: widget),
@@ -99,18 +96,16 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           const SizedBox(height: AppSpacing.md),
 
-                          // --------------------------------------------------
                           // Hero: camera CTA
-                          // --------------------------------------------------
                           HeroCameraButton(
                             onTap: () => context.goNamed('camera'),
+                            label: l.homeHeroTitle,
+                            sublabel: l.homeHeroSubtitle,
                           ),
 
                           const SizedBox(height: AppSpacing.md),
 
-                          // --------------------------------------------------
-                          // Secondary quick action: type a question
-                          // --------------------------------------------------
+                          // Secondary quick actions: type / history
                           _SecondaryActionRow(
                             onTypeQuestion: () => context.goNamed('question'),
                             onViewHistory: () => context.goNamed('history'),
@@ -118,9 +113,7 @@ class _HomePageState extends State<HomePage> {
 
                           const SizedBox(height: AppSpacing.xxl),
 
-                          // --------------------------------------------------
                           // Usage indicator (only when authenticated)
-                          // --------------------------------------------------
                           BlocBuilder<AuthBloc, AuthState>(
                             builder: (context, state) {
                               if (state is AuthAuthenticated) {
@@ -135,10 +128,8 @@ class _HomePageState extends State<HomePage> {
                             },
                           ),
 
-                          // --------------------------------------------------
-                          // Study: review + error book
-                          // --------------------------------------------------
-                          _SectionHeader(title: AppLocalizations.of(context).homeStudy),
+                          // Study: review + error book + documents
+                          AppSectionHeader(title: l.homeStudy),
 
                           const SizedBox(height: AppSpacing.md),
 
@@ -151,12 +142,10 @@ class _HomePageState extends State<HomePage> {
 
                           const SizedBox(height: AppSpacing.xxl),
 
-                          // --------------------------------------------------
                           // Recent questions
-                          // --------------------------------------------------
-                          _SectionHeader(
-                            title: AppLocalizations.of(context).homeRecent,
-                            action: AppLocalizations.of(context).viewAll,
+                          AppSectionHeader(
+                            title: l.homeRecent,
+                            actionLabel: l.viewAll,
                             onAction: () => context.goNamed('history'),
                           ),
 
@@ -185,38 +174,54 @@ class _HomePageState extends State<HomePage> {
 }
 
 // ----------------------------------------------------------------------------
-// Greeting header
+// Greeting header — time-of-day greeting, mascot on the right
 // ----------------------------------------------------------------------------
 class _GreetingHeader extends StatelessWidget {
   final String name;
   const _GreetingHeader({required this.name});
 
-  String get _greeting {
+  String _greeting(AppLocalizations l) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return '早上好';
-    if (hour < 18) return '下午好';
-    return '晚上好';
+    if (hour < 12) return l.greetingMorning;
+    if (hour < 18) return l.greetingAfternoon;
+    return l.greetingEvening;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final l = AppLocalizations.of(context);
+    return Row(
       children: [
-        Text(
-          '$_greeting，$name',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-                letterSpacing: -0.3,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${_greeting(l)}，$name',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.3,
+                    ),
               ),
+              const SizedBox(height: 1),
+              Text(
+                l.homeGreetingSubtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 1),
-        Text(
-          '有题目不会做？拍一张就懂了',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+        // Mascot — Aura the spark. Falls back to nothing if the asset is
+        // missing so a broken asset never breaks the header layout.
+        SvgPicture.asset(
+          'assets/brand/aura_wave.svg',
+          width: 44,
+          height: 44,
+          placeholderBuilder: (_) => const SizedBox(width: 44, height: 44),
         ),
       ],
     );
@@ -237,12 +242,14 @@ class _SecondaryActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Row(
       children: [
         Expanded(
           child: _SecondaryActionTile(
             icon: Icons.edit_outlined,
-            label: '文字提问',
+            label: l.homeTextQuestion,
+            accent: AppColors.primary,
             onTap: onTypeQuestion,
           ),
         ),
@@ -250,7 +257,8 @@ class _SecondaryActionRow extends StatelessWidget {
         Expanded(
           child: _SecondaryActionTile(
             icon: Icons.history_rounded,
-            label: '历史记录',
+            label: l.homeHistory,
+            accent: AppColors.primaryViolet,
             onTap: onViewHistory,
           ),
         ),
@@ -262,45 +270,49 @@ class _SecondaryActionRow extends StatelessWidget {
 class _SecondaryActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color accent;
   final VoidCallback onTap;
 
   const _SecondaryActionTile({
     required this.icon,
     required this.label,
+    required this.accent,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.base,
-            vertical: AppSpacing.md + 2,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 18, color: AppColors.textSecondary),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
+    return AppPressable(
+      onTap: onTap,
+      semanticLabel: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.base,
+          vertical: AppSpacing.md + 2,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(color: AppColors.border),
+          boxShadow: AppShadows.soft,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: accent),
+            const SizedBox(width: AppSpacing.sm),
+            Flexible(
+              child: Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
                     ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -308,7 +320,8 @@ class _SecondaryActionTile extends StatelessWidget {
 }
 
 // ----------------------------------------------------------------------------
-// Study action row: 今日复习 (with due badge) + 错题本
+// Study action row: 今日复习 (with due badge) + 错题本 + 我的资料
+// Pastel colour-coded: review=indigo, mistakes=amber, materials=green.
 // ----------------------------------------------------------------------------
 class _StudyActionRow extends StatelessWidget {
   final VoidCallback onReview;
@@ -325,11 +338,13 @@ class _StudyActionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: _StudyActionTile(
-            icon: Icons.school_outlined,
+            icon: Icons.school_rounded,
             label: l.homeReview,
+            accent: AppColors.primary,
             badge: const _DueBadge(),
             onTap: onReview,
           ),
@@ -337,16 +352,18 @@ class _StudyActionRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _StudyActionTile(
-            icon: Icons.menu_book_outlined,
+            icon: Icons.menu_book_rounded,
             label: l.homeErrorBook,
+            accent: AppColors.warningDark,
             onTap: onErrorBook,
           ),
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _StudyActionTile(
-            icon: Icons.folder_open_outlined,
+            icon: Icons.folder_open_rounded,
             label: l.homeMyDocuments,
+            accent: AppColors.encourageDark,
             onTap: onDocuments,
           ),
         ),
@@ -358,69 +375,64 @@ class _StudyActionRow extends StatelessWidget {
 class _StudyActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color accent;
   final Widget? badge;
   final VoidCallback onTap;
 
   const _StudyActionTile({
     required this.icon,
     required this.label,
+    required this.accent,
     required this.onTap,
     this.badge,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.base,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.border),
-            boxShadow: AppShadows.card,
-          ),
-          // Vertical layout: icon on top (with optional overlaid badge), a
-          // single-line centered label below. Avoids the cramped 3-across
-          // horizontal squeeze that wrapped labels mid-word.
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Icon(icon, size: 22, color: AppColors.primary),
+    return AppPressable(
+      onTap: onTap,
+      semanticLabel: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.base,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          boxShadow: AppShadows.clay(accent),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(AppRadius.button),
                   ),
-                  if (badge != null)
-                    Positioned(right: -6, top: -6, child: badge!),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
-          ),
+                  child: Icon(icon, size: 24, color: accent),
+                ),
+                if (badge != null)
+                  Positioned(right: -6, top: -6, child: badge!),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
         ),
       ),
     );
@@ -470,67 +482,14 @@ class _DueBadge extends StatelessWidget {
 }
 
 // ----------------------------------------------------------------------------
-// Section header
-// ----------------------------------------------------------------------------
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final String? action;
-  final VoidCallback? onAction;
-
-  const _SectionHeader({
-    required this.title,
-    this.action,
-    this.onAction,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-        ),
-        if (action != null && onAction != null)
-          GestureDetector(
-            onTap: onAction,
-            child: Text(
-              action!,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-// ----------------------------------------------------------------------------
 // Recent questions section — wired to HistoryBloc (latest 3 items)
 // ----------------------------------------------------------------------------
 class _RecentQuestionsSection extends StatelessWidget {
   const _RecentQuestionsSection();
 
-  /// Formats a DateTime into a human-readable relative string in Chinese.
-  String _formatTime(DateTime dt) {
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes} 分钟前';
-    if (diff.inHours < 24) return '${diff.inHours} 小时前';
-    if (diff.inDays == 1) return '昨天';
-    if (diff.inDays < 7) return '${diff.inDays} 天前';
-    return '${dt.month}/${dt.day}';
-  }
-
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return BlocBuilder<HistoryBloc, HistoryState>(
       builder: (context, state) {
         // Loading shimmer
@@ -548,9 +507,9 @@ class _RecentQuestionsSection extends StatelessWidget {
                 child: RecentQuestionCard(
                   question: item.question?.isNotEmpty == true
                       ? item.question!
-                      : '（无题目文字）',
-                  subject: item.subject ?? '综合',
-                  time: _formatTime(item.createdAt),
+                      : l.historyNoQuestionText,
+                  subject: item.subject ?? l.subjectGeneral,
+                  time: formatTimeAgo(context, item.createdAt),
                   hasImages:
                       item.imageUrls != null && item.imageUrls!.isNotEmpty,
                   onTap: () => context.go('/history/detail/${item.id}'),
@@ -561,7 +520,11 @@ class _RecentQuestionsSection extends StatelessWidget {
         }
 
         // Empty (HistoryEmpty, HistoryInitial after load, or error)
-        return const _RecentEmptyState();
+        return AppEmptyState(
+          illustration: 'assets/illustrations/empty_history.svg',
+          title: l.homeEmptyRecentTitle,
+          subtitle: l.homeEmptyRecentSubtitle,
+        );
       },
     );
   }
@@ -572,65 +535,17 @@ class _RecentLoadingPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(
-        2,
-        (_) => Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-          child: Container(
-            height: 88,
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-            ),
-          ),
+    return const Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.only(bottom: AppSpacing.md),
+          child: SkeletonBox(height: 88, radius: AppRadius.card),
         ),
-      ),
-    );
-  }
-}
-
-class _RecentEmptyState extends StatelessWidget {
-  const _RecentEmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        vertical: AppSpacing.xxl,
-        horizontal: AppSpacing.base,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.menu_book_outlined,
-            size: 40,
-            color: AppColors.textHint,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            '还没有解题记录',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            '拍下第一道题，马上获得分步讲解',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textHint,
-                ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        Padding(
+          padding: EdgeInsets.only(bottom: AppSpacing.md),
+          child: SkeletonBox(height: 88, radius: AppRadius.card),
+        ),
+      ],
     );
   }
 }

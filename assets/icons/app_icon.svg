@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>AuraLearn app icon</title>
+  <desc>A soft 3D indigo app icon with an open book and a glowing amber spark.</desc>
+  <defs>
+    <linearGradient id="backgroundGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4F6EF7" />
+      <stop offset="1" stop-color="#7C3AED" />
+    </linearGradient>
+    <clipPath id="squircleClip">
+      <rect width="1024" height="1024" rx="220" />
+    </clipPath>
+    <filter id="bottomShadow" x="-20%" y="-30%" width="140%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18" />
+    </filter>
+    <filter id="sparkGlow" x="-80%" y="-80%" width="260%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="20" result="blur" />
+      <feFlood flood-color="#F59E0B" flood-opacity="0.55" result="glowColor" />
+      <feComposite in="glowColor" in2="blur" operator="in" result="glow" />
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" rx="220" fill="url(#backgroundGradient)" />
+
+  <g clip-path="url(#squircleClip)">
+    <ellipse cx="512" cy="86" rx="430" ry="150" fill="#FFFFFF" opacity="0.1" />
+    <path
+      d="M128 824 C270 932 754 932 896 824 C842 963 684 1000 512 1000 C340 1000 182 963 128 824 Z"
+      fill="#3A54D4"
+      opacity="0.25"
+      filter="url(#bottomShadow)"
+    />
+
+    <path
+      d="M512 216
+        C522 216 530 224 534 238
+        L556 298
+        C558 304 562 308 568 310
+        L628 332
+        C642 337 650 345 650 356
+        C650 367 642 375 628 380
+        L568 402
+        C562 404 558 408 556 414
+        L534 474
+        C530 488 522 496 512 496
+        C502 496 494 488 490 474
+        L468 414
+        C466 408 462 404 456 402
+        L396 380
+        C382 375 374 367 374 356
+        C374 345 382 337 396 332
+        L456 310
+        C462 308 466 304 468 298
+        L490 238
+        C494 224 502 216 512 216 Z"
+      fill="#F59E0B"
+      stroke="#FFC85A"
+      stroke-width="8"
+      stroke-linejoin="round"
+      filter="url(#sparkGlow)"
+    />
+    <path
+      d="M512 474 C512 492 512 518 512 550"
+      fill="none"
+      stroke="#F59E0B"
+      stroke-width="16"
+      stroke-linecap="round"
+      opacity="0.85"
+    />
+
+    <path
+      d="M512 566
+        C456 520 387 497 305 508
+        C285 511 270 528 270 549
+        V691
+        C270 716 293 733 318 728
+        C393 713 458 725 512 768 Z"
+      fill="#FFFFFF"
+      stroke="#FFFFFF"
+      stroke-width="12"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M512 566
+        C568 520 637 497 719 508
+        C739 511 754 528 754 549
+        V691
+        C754 716 731 733 706 728
+        C631 713 566 725 512 768 Z"
+      fill="#FFFFFF"
+      stroke="#FFFFFF"
+      stroke-width="12"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M512 566 V768"
+      fill="none"
+      stroke="#D8E1FF"
+      stroke-width="12"
+      stroke-linecap="round"
+    />
+    <path
+      d="M306 550 C372 540 430 553 483 583"
+      fill="none"
+      stroke="#D8E1FF"
+      stroke-width="12"
+      stroke-linecap="round"
+      opacity="0.85"
+    />
+    <path
+      d="M718 550 C652 540 594 553 541 583"
+      fill="none"
+      stroke="#D8E1FF"
+      stroke-width="12"
+      stroke-linecap="round"
+      opacity="0.85"
+    />
+  </g>
+</svg>

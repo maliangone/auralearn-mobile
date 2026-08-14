@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="historyCover" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4F6EF7" />
+      <stop offset="1" stop-color="#3A54D4" />
+    </linearGradient>
+    <linearGradient id="historyPage" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#EEF1FE" />
+    </linearGradient>
+    <filter id="historyShadow" x="-20%" y="-80%" width="140%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+  </defs>
+
+  <ellipse cx="200" cy="323" rx="126" ry="16" fill="#3A54D4" opacity="0.18" filter="url(#historyShadow)" />
+
+  <g transform="rotate(-4 200 222)">
+    <path
+      d="M76 186 C121 166 166 171 200 197 C234 171 279 166 324 186 L319 294 C276 278 236 286 200 312 C164 286 124 278 81 294 Z"
+      fill="url(#historyCover)"
+      stroke="#3A54D4"
+      stroke-width="8"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M88 205 C125 191 164 198 194 219"
+      fill="none"
+      stroke="#FFFFFF"
+      stroke-width="8"
+      stroke-linecap="round"
+      opacity="0.16"
+    />
+
+    <path
+      d="M200 184 C168 156 124 148 84 160 C76 162 70 170 70 179 V279 C70 290 80 297 91 293 C132 280 169 288 200 310 Z"
+      fill="url(#historyPage)"
+      stroke="#D8E1FF"
+      stroke-width="7"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M200 184 C232 156 276 148 316 160 C324 162 330 170 330 179 V279 C330 290 320 297 309 293 C268 280 231 288 200 310 Z"
+      fill="url(#historyPage)"
+      stroke="#D8E1FF"
+      stroke-width="7"
+      stroke-linejoin="round"
+    />
+    <path d="M200 184 V310" fill="none" stroke="#4F6EF7" stroke-width="8" stroke-linecap="round" opacity="0.82" />
+
+    <path
+      d="M86 174 C118 158 157 164 190 184"
+      fill="none"
+      stroke="#FFFFFF"
+      stroke-width="8"
+      stroke-linecap="round"
+      opacity="0.82"
+    />
+    <path
+      d="M314 174 C282 158 243 164 210 184"
+      fill="none"
+      stroke="#FFFFFF"
+      stroke-width="8"
+      stroke-linecap="round"
+      opacity="0.82"
+    />
+
+    <path d="M101 215 C129 208 160 214 183 228" fill="none" stroke="#C5D0FF" stroke-width="7" stroke-linecap="round" />
+    <path d="M99 241 C130 234 159 240 181 253" fill="none" stroke="#D8E1FF" stroke-width="7" stroke-linecap="round" />
+    <path d="M299 215 C271 208 240 214 217 228" fill="none" stroke="#C5D0FF" stroke-width="7" stroke-linecap="round" />
+    <path d="M301 241 C270 234 241 240 219 253" fill="none" stroke="#D8E1FF" stroke-width="7" stroke-linecap="round" />
+  </g>
+
+  <g transform="rotate(-14 103 113)">
+    <rect x="72" y="90" width="62" height="45" rx="15" fill="#EEF1FE" stroke="#4F6EF7" stroke-width="6" />
+    <path d="M88 108 C101 104 112 105 120 110" fill="none" stroke="#7C3AED" stroke-width="5" stroke-linecap="round" opacity="0.8" />
+    <path d="M88 120 H113" fill="none" stroke="#C5D0FF" stroke-width="5" stroke-linecap="round" />
+    <path d="M84 98 C95 93 108 93 119 98" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.8" />
+  </g>
+
+  <g transform="rotate(13 298 108)">
+    <rect x="269" y="85" width="60" height="46" rx="15" fill="#4F6EF7" stroke="#3A54D4" stroke-width="6" />
+    <path d="M284 105 C296 101 307 102 316 108" fill="none" stroke="#EEF1FE" stroke-width="5" stroke-linecap="round" opacity="0.85" />
+    <path d="M284 117 H307" fill="none" stroke="#C5D0FF" stroke-width="5" stroke-linecap="round" />
+    <path d="M281 94 C293 90 305 91 316 96" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.24" />
+  </g>
+
+  <path
+    d="M54 132 C56 140 60 144 69 147 C60 150 56 154 54 164 C52 154 48 150 39 147 C48 144 52 140 54 132 Z"
+    fill="#F59E0B"
+    stroke="#FFC85A"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M345 139 C347 146 350 149 357 151 C350 153 347 156 345 163 C343 156 340 153 333 151 C340 149 343 146 345 139 Z"
+    fill="#7C3AED"
+    opacity="0.86"
+    stroke="#6D32D0"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+  <circle cx="340" cy="101" r="7" fill="#22C55E" opacity="0.8" />
+</svg>

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="documentsFolder" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#607CF8" />
+      <stop offset="1" stop-color="#3A54D4" />
+    </linearGradient>
+    <linearGradient id="documentsPocket" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#4ADE80" />
+      <stop offset="1" stop-color="#22C55E" />
+    </linearGradient>
+    <linearGradient id="documentsPaper" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#EEF1FE" />
+    </linearGradient>
+    <filter id="documentsShadow" x="-20%" y="-80%" width="140%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+  </defs>
+
+  <ellipse cx="200" cy="325" rx="128" ry="16" fill="#3A54D4" opacity="0.18" filter="url(#documentsShadow)" />
+
+  <path
+    d="M83 153 V127 C83 117 90 112 101 112 H153 C165 112 171 118 178 129 L188 145 H307 C321 145 328 153 327 168 L318 286 C317 298 309 304 296 304 H94 C79 304 72 296 73 282 Z"
+    fill="url(#documentsFolder)"
+    stroke="#3A54D4"
+    stroke-width="8"
+    stroke-linejoin="round"
+  />
+  <path d="M91 145 C113 135 150 134 176 145" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" opacity="0.2" />
+
+  <g transform="rotate(-5 193 184)">
+    <path
+      d="M130 108 C130 99 136 94 145 94 H220 L258 132 V269 C258 277 252 282 243 282 H145 C136 282 130 276 130 267 Z"
+      fill="url(#documentsPaper)"
+      stroke="#D8E1FF"
+      stroke-width="7"
+      stroke-linejoin="round"
+    />
+    <path d="M220 96 V122 C220 130 225 135 233 135 H258" fill="#D8E1FF" stroke="#D8E1FF" stroke-width="6" stroke-linejoin="round" />
+    <path d="M151 158 H228" fill="none" stroke="#C5D0FF" stroke-width="7" stroke-linecap="round" />
+    <path d="M151 184 H231" fill="none" stroke="#D8E1FF" stroke-width="7" stroke-linecap="round" />
+    <path d="M151 210 H211" fill="none" stroke="#D8E1FF" stroke-width="7" stroke-linecap="round" />
+    <path d="M145 111 C166 101 196 103 214 112" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" opacity="0.8" />
+  </g>
+
+  <path
+    d="M74 177 C74 165 83 157 96 157 H322 C329 157 333 163 331 171 L318 286 C317 298 308 304 295 304 H94 C79 304 72 296 73 282 Z"
+    fill="url(#documentsPocket)"
+    stroke="#16A34A"
+    stroke-width="8"
+    stroke-linejoin="round"
+  />
+  <path d="M87 178 C130 165 236 167 313 178" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" opacity="0.26" />
+  <path d="M94 286 C149 296 247 296 302 286" fill="none" stroke="#15803D" stroke-width="7" stroke-linecap="round" opacity="0.25" />
+
+  <g>
+    <path d="M286 252 L333 299" fill="none" stroke="#3A54D4" stroke-width="21" stroke-linecap="round" />
+    <path d="M286 252 L333 299" fill="none" stroke="#607CF8" stroke-width="8" stroke-linecap="round" opacity="0.7" />
+    <circle cx="252" cy="209" r="59" fill="#EEF1FE" stroke="#3A54D4" stroke-width="10" />
+    <circle cx="252" cy="209" r="44" fill="#FFFFFF" opacity="0.66" />
+    <path d="M223 184 C236 173 253 169 269 174" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" opacity="0.95" />
+    <circle cx="252" cy="209" r="45" fill="none" stroke="#4F6EF7" stroke-width="5" opacity="0.45" />
+  </g>
+
+  <path
+    d="M57 115 C59 122 62 125 69 127 C62 129 59 132 57 139 C55 132 52 129 45 127 C52 125 55 122 57 115 Z"
+    fill="#22C55E"
+    stroke="#86EFAC"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+  <circle cx="338" cy="126" r="7" fill="#7C3AED" opacity="0.78" />
+</svg>

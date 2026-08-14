@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="loginShield" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#EEF1FE" />
+    </linearGradient>
+    <linearGradient id="loginStar" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#607CF8" />
+      <stop offset="1" stop-color="#3A54D4" />
+    </linearGradient>
+    <filter id="loginShadow" x="-20%" y="-80%" width="140%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+  </defs>
+
+  <ellipse cx="204" cy="326" rx="130" ry="16" fill="#3A54D4" opacity="0.17" filter="url(#loginShadow)" />
+
+  <path
+    d="M261 91 C279 101 298 105 316 109 V176 C316 232 288 273 261 293 C233 273 205 232 205 176 V109 C223 105 242 101 261 91 Z"
+    transform="translate(5 7)"
+    fill="#3A54D4"
+    opacity="0.2"
+  />
+  <path
+    d="M256 84 C275 96 294 100 313 105 V174 C313 230 286 270 256 290 C226 270 199 230 199 174 V105 C218 100 237 96 256 84 Z"
+    fill="url(#loginShield)"
+    stroke="#4F6EF7"
+    stroke-width="8"
+    stroke-linejoin="round"
+  />
+  <path d="M221 117 C241 108 269 104 291 116" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" opacity="0.8" />
+  <path d="M256 132 C280 149 289 175 286 198 C282 229 268 252 256 263 C244 252 230 229 226 198 C223 175 232 149 256 132 Z" fill="#4F6EF7" opacity="0.09" />
+  <rect x="231" y="143" width="50" height="68" rx="20" fill="#4F6EF7" opacity="0.16" />
+  <circle cx="256" cy="164" r="11" fill="#F59E0B" />
+  <rect x="247" y="169" width="18" height="25" rx="9" fill="#F59E0B" />
+  <path d="M250 157 C254 153 259 153 263 157" fill="none" stroke="#FFE3A3" stroke-width="4" stroke-linecap="round" opacity="0.8" />
+
+  <path d="M177 154 C195 148 204 133 210 114" fill="none" stroke="#3A54D4" stroke-width="16" stroke-linecap="round" />
+  <circle cx="213" cy="106" r="12" fill="#4F6EF7" stroke="#3A54D4" stroke-width="5" />
+  <path d="M207 103 C202 98 203 92 207 89" fill="none" stroke="#4F6EF7" stroke-width="7" stroke-linecap="round" />
+  <path d="M214 101 C212 94 215 89 219 87" fill="none" stroke="#4F6EF7" stroke-width="7" stroke-linecap="round" />
+  <path d="M220 104 C220 97 224 93 228 93" fill="none" stroke="#4F6EF7" stroke-width="7" stroke-linecap="round" />
+
+  <path
+    d="M142 77 C149 77 153 83 157 94 L169 124 L202 137 C213 142 216 149 207 156 L173 169 L160 204 C156 216 149 222 142 216 C137 214 134 208 132 202 L119 170 L87 157 C75 153 73 146 82 139 L116 126 L129 93 C132 82 136 77 142 77 Z"
+    fill="url(#loginStar)"
+    stroke="#3A54D4"
+    stroke-width="8"
+    stroke-linejoin="round"
+  />
+  <path d="M136 95 C141 86 146 86 151 96 L160 123" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" opacity="0.24" />
+  <circle cx="132" cy="145" r="5.5" fill="#FFFFFF" />
+  <circle cx="157" cy="145" r="5.5" fill="#FFFFFF" />
+  <path d="M135 159 C141 166 150 166 156 159" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" />
+  <circle cx="119" cy="157" r="5" fill="#F59E0B" opacity="0.86" />
+  <circle cx="171" cy="157" r="5" fill="#F59E0B" opacity="0.86" />
+
+  <path d="M104 178 C96 187 96 194 101 201" fill="none" stroke="#4F6EF7" stroke-width="13" stroke-linecap="round" />
+  <circle cx="103" cy="203" r="8" fill="#4F6EF7" />
+
+  <path
+    d="M58 112 C60 119 63 122 70 124 C63 126 60 129 58 136 C56 129 53 126 46 124 C53 122 56 119 58 112 Z"
+    fill="#F59E0B"
+    stroke="#FFC85A"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+  <circle cx="338" cy="222" r="7" fill="#22C55E" opacity="0.78" />
+</svg>

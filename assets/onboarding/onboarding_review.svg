@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="reviewRefreshCard" x1="0" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#EEF1FE" />
+    </linearGradient>
+    <linearGradient id="reviewBrain" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#607CF8" />
+      <stop offset="1" stop-color="#3A54D4" />
+    </linearGradient>
+    <filter id="reviewRefreshShadow" x="-20%" y="-80%" width="140%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+  </defs>
+
+  <ellipse cx="201" cy="326" rx="129" ry="16" fill="#3A54D4" opacity="0.18" filter="url(#reviewRefreshShadow)" />
+
+  <path
+    d="M294 185 C294 133 253 93 202 93 C147 93 105 135 105 188 C105 229 130 263 167 276"
+    fill="none"
+    stroke="#4F6EF7"
+    stroke-width="13"
+    stroke-linecap="round"
+  />
+  <path d="M153 253 L168 276 L189 267" fill="none" stroke="#4F6EF7" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M116 135 C126 115 144 101 164 96" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" opacity="0.26" />
+
+  <g transform="rotate(-3 198 190)">
+    <rect x="103" y="124" width="190" height="135" rx="28" fill="#3A54D4" opacity="0.2" transform="translate(5 8)" />
+    <rect x="103" y="116" width="190" height="135" rx="28" fill="url(#reviewRefreshCard)" stroke="#4F6EF7" stroke-width="8" />
+    <path d="M124 137 C158 123 221 124 270 138" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" opacity="0.9" />
+    <rect x="125" y="221" width="61" height="10" rx="5" fill="#C5D0FF" />
+    <rect x="197" y="221" width="43" height="10" rx="5" fill="#D8E1FF" />
+
+    <path
+      d="M198 151 C189 144 177 147 173 157 C163 155 155 163 157 173 C148 180 150 192 158 198 C155 209 164 218 175 217 C181 226 193 224 198 215 C206 224 219 221 222 212 C233 212 240 201 235 191 C242 182 237 169 226 167 C225 157 215 150 205 153 C203 151 200 150 198 151 Z"
+      fill="url(#reviewBrain)"
+      stroke="#3A54D4"
+      stroke-width="6"
+      stroke-linejoin="round"
+    />
+    <path d="M198 153 C203 164 198 173 201 181 C204 190 198 199 198 215" fill="none" stroke="#EEF1FE" stroke-width="5" stroke-linecap="round" opacity="0.9" />
+    <path d="M174 166 C181 163 186 167 185 174 M161 182 C169 179 174 184 172 190 M174 205 C181 202 186 206 185 212" fill="none" stroke="#EEF1FE" stroke-width="5" stroke-linecap="round" opacity="0.78" />
+    <path d="M220 166 C214 163 210 167 211 173 M232 182 C225 179 220 184 222 190 M219 202 C213 200 209 205 211 210" fill="none" stroke="#EEF1FE" stroke-width="5" stroke-linecap="round" opacity="0.78" />
+  </g>
+
+  <g>
+    <circle cx="298" cy="269" r="31" fill="#16A34A" opacity="0.25" />
+    <circle cx="298" cy="261" r="31" fill="#22C55E" stroke="#16A34A" stroke-width="7" />
+    <path d="M283 261 L293 271 L313 248" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M286 250 C292 244 300 243 306 247" fill="none" stroke="#86EFAC" stroke-width="5" stroke-linecap="round" opacity="0.85" />
+  </g>
+
+  <path
+    d="M68 180 C70 187 73 190 80 192 C73 194 70 197 68 204 C66 197 63 194 56 192 C63 190 66 187 68 180 Z"
+    fill="#F59E0B"
+    stroke="#FFC85A"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+  <circle cx="333" cy="151" r="7" fill="#22C55E" opacity="0.8" />
+</svg>
