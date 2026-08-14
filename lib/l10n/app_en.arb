@@ -20,6 +20,7 @@
   "commonErrorWithMessage": "Couldn't load: {message}",
   "@commonErrorWithMessage": {"placeholders": {"message": {"type": "String"}}},
   "commonGoSettings": "Open settings",
+  "commonClear": "Clear",
 
   "timeJustNow": "just now",
   "timeMinutesAgo": "{n} min ago",
@@ -153,6 +154,12 @@
   "cropDragToMove": "Drag to move",
   "cropNextImage": "Next Image",
   "cropSubmitQuestion": "Submit Question",
+  "cropInstruction": "Drag the corners to select the question area",
+  "cropInstructionSub": "Make sure the entire question is within the blue area",
+  "cropReset": "Reset crop area",
+  "cropErrorUncropped": "Please crop image {n} before submitting.",
+  "@cropErrorUncropped": {"placeholders": {"n": {"type": "int"}}},
+  "cropProcessFailed": "Failed to process images. Please try again.",
 
   "questionTitle": "Solve",
   "questionInputHint": "Type your question…",
@@ -196,6 +203,9 @@
   "historyTagsTapToDelete": "Tap an existing tag to remove it",
   "historyNoQuestionText": "(No problem text)",
   "historyDeleteItem": "Delete this record",
+  "historyDetailTitle": "Problem Detail",
+  "historyDetailPlaceholderTitle": "Detail view coming soon",
+  "historyDetailPlaceholderSubtitle": "A full step-by-step view of this problem is on the way.",
 
   "subTitle": "Member",
   "subFree": "Free",
@@ -297,6 +307,7 @@
   "errorBookTitle": "Mistakes",
   "errorBookEmpty": "Your mistake book is empty",
   "errorBookEmptySubtitle": "Problems you get wrong show up here for easy review",
+  "errorBookDeleteConfirm": "Delete this card from your mistake book?",
 
   "docsTitle": "My Materials",
   "docsImport": "Import",
@@ -316,5 +327,8 @@
   "docsQuotaUsedUp": "Today's free quota is used up ({quota}/day) — upgrade to continue",
   "@docsQuotaUsedUp": {"placeholders": {"quota": {"type": "int"}}},
   "docsAnswerInterrupted": "The answer was cut off. Please try again.",
-  "docsDeleteItem": "Delete this material"
+  "docsDeleteItem": "Delete this material",
+  "docsDeleteConfirm": "Delete this material? This cannot be undone.",
+  "docsTypeImage": "Image",
+  "docsTypeText": "Text"
 }

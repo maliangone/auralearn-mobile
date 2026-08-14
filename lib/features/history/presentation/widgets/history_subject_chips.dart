@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/tokens.dart';
+import '../../../../../l10n/app_localizations.dart';
 
 /// Horizontal scrolling row of subject filter chips.
 ///
-/// Always shows a "全部" chip as the first item. Selected chip uses
+/// Always shows an "all" chip as the first item. Selected chip uses
 /// [AppColors.primary] fill; unselected chips use a ghost style.
 class HistorySubjectChips extends StatelessWidget {
   final List<String> subjects;
@@ -22,10 +23,11 @@ class HistorySubjectChips extends StatelessWidget {
   Widget build(BuildContext context) {
     if (subjects.isEmpty) return const SizedBox.shrink();
 
-    final allSubjects = [null, ...subjects]; // null = "全部"
+    final l = AppLocalizations.of(context);
+    final allSubjects = [null, ...subjects]; // null = "all"
 
     return SizedBox(
-      height: 36,
+      height: 44,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
@@ -34,7 +36,7 @@ class HistorySubjectChips extends StatelessWidget {
         itemBuilder: (context, index) {
           final subject = allSubjects[index];
           final isSelected = subject == selectedSubject;
-          final label = subject ?? '全部';
+          final label = subject ?? l.historyFilterAll;
 
           return _SubjectChip(
             label: label,
@@ -60,32 +62,40 @@ class _SubjectChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.easeOut,
-      child: Material(
-        color: isSelected ? AppColors.primary : AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.xl),
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs + 2,
-            ),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.xl),
-              border: isSelected
-                  ? null
-                  : Border.all(color: AppColors.border, width: 1),
-            ),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? AppColors.textOnPrimary : AppColors.textSecondary,
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        child: Material(
+          color: isSelected ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.chip),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppRadius.chip),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm + 2,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.chip),
+                border: isSelected
+                    ? null
+                    : Border.all(color: AppColors.border, width: 1),
+              ),
+              child: Center(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w400,
+                        color: isSelected
+                            ? AppColors.textOnPrimary
+                            : AppColors.textSecondary,
+                      ),
+                ),
               ),
             ),
           ),

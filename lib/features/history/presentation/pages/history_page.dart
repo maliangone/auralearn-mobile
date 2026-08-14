@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/widgets/app_empty_state.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../bloc/history_bloc.dart';
 import '../bloc/history_event.dart';
 import '../bloc/history_state.dart';
@@ -20,6 +22,17 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   final _scrollController = ScrollController();
 
+  /// Owned here (not inside the search bar) so "clear filters" can also clear
+  /// the visible query text.
+  final _searchController = TextEditingController();
+
+  // Last-known filter values — HistoryLoadingMore (and the delete-transient
+  // states) carry no filter info, so the chips/search highlight would vanish
+  // during pagination without these.
+  String _lastQuery = '';
+  String? _lastSubject;
+  List<String> _lastSubjects = const [];
+
   @override
   void initState() {
     super.initState();
@@ -34,14 +47,22 @@ class _HistoryPageState extends State<HistoryPage> {
     }
   }
 
+  void _clearFilters() {
+    _searchController.clear();
+    context.read<HistoryBloc>().add(const HistoryFiltersCleared());
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -49,7 +70,7 @@ class _HistoryPageState extends State<HistoryPage> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          '历史',
+          l.historyTitle,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
@@ -58,28 +79,21 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
       body: BlocBuilder<HistoryBloc, HistoryState>(
         builder: (context, state) {
-          // Resolve filter values from whatever state we're in.
-          final String currentQuery;
-          final String? currentSubject;
-          final List<String> subjects;
-
+          // Resolve filter values from whatever state we're in, refreshing the
+          // last-known cache whenever a state actually carries them.
           if (state is HistoryLoaded) {
-            currentQuery = state.currentQuery;
-            currentSubject = state.currentSubject;
-            subjects = state.subjects;
+            _lastQuery = state.currentQuery;
+            _lastSubject = state.currentSubject;
+            _lastSubjects = state.subjects;
           } else if (state is HistoryEmpty) {
-            currentQuery = state.currentQuery;
-            currentSubject = state.subject;
-            subjects = state.subjects;
-          } else if (state is HistoryLoadingMore) {
-            currentQuery = '';
-            currentSubject = null;
-            subjects = const [];
-          } else {
-            currentQuery = '';
-            currentSubject = null;
-            subjects = const [];
+            _lastQuery = state.currentQuery;
+            _lastSubject = state.subject;
+            _lastSubjects = state.subjects;
           }
+
+          final currentQuery = _lastQuery;
+          final currentSubject = _lastSubject;
+          final subjects = _lastSubjects;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,6 +107,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   AppSpacing.sm,
                 ),
                 child: HistorySearchBar(
+                  controller: _searchController,
                   onChanged: (query) => context
                       .read<HistoryBloc>()
                       .add(HistorySearchChanged(query)),
@@ -115,7 +130,10 @@ class _HistoryPageState extends State<HistoryPage> {
               ],
 
               // Body content
-              Expanded(child: _buildBody(context, state, currentQuery, currentSubject)),
+              Expanded(
+                child:
+                    _buildBody(context, state, currentQuery, currentSubject),
+              ),
             ],
           );
         },
@@ -147,9 +165,7 @@ class _HistoryPageState extends State<HistoryPage> {
       return _NoResultsState(
         query: state.currentQuery,
         subject: state.subject,
-        onClearFilters: () => context
-            .read<HistoryBloc>()
-            .add(const HistoryFiltersCleared()),
+        onClearFilters: _clearFilters,
       );
     }
 
@@ -169,9 +185,7 @@ class _HistoryPageState extends State<HistoryPage> {
           ? _NoResultsState(
               query: currentQuery,
               subject: currentSubject,
-              onClearFilters: () => context
-                  .read<HistoryBloc>()
-                  .add(const HistoryFiltersCleared()),
+              onClearFilters: _clearFilters,
             )
           : const _EmptyState();
     }
@@ -231,53 +245,14 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.menu_book_outlined,
-              size: 64,
-              color: AppColors.textHint,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              '还没有解题记录',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'AI 家教会一步步教你\n记录会自动保存在本地',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            FilledButton.icon(
-              onPressed: () => context.goNamed('camera'),
-              icon: const Icon(Icons.camera_alt_outlined, size: 18),
-              label: const Text('去拍照解题'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textOnPrimary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xl,
-                  vertical: AppSpacing.md,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    final l = AppLocalizations.of(context);
+    return AppEmptyState(
+      illustration: 'assets/illustrations/empty_history.svg',
+      title: l.historyEmptyTitle,
+      subtitle: l.historyEmptySubtitle,
+      ctaLabel: l.homeGoSolve,
+      onCta: () => context.goNamed('camera'),
+      inline: true,
     );
   }
 }
@@ -295,60 +270,19 @@ class _NoResultsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final filterDesc = [
       if (query.isNotEmpty) '"$query"',
       if (subject != null) subject!,
     ].join(' · ');
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.search_off_rounded,
-              size: 56,
-              color: AppColors.textHint,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              '没有匹配的记录',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-            ),
-            if (filterDesc.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                filterDesc,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textHint,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-            const SizedBox(height: AppSpacing.xl),
-            OutlinedButton.icon(
-              onPressed: onClearFilters,
-              icon: const Icon(Icons.filter_alt_off_rounded, size: 16),
-              label: const Text('清除筛选'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xl,
-                  vertical: AppSpacing.md,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return AppEmptyState(
+      illustration: 'assets/illustrations/no_results.svg',
+      title: l.historyNoResults,
+      subtitle: filterDesc.isEmpty ? null : filterDesc,
+      ctaLabel: l.historyClearFilters,
+      onCta: onClearFilters,
+      inline: true,
     );
   }
 }
@@ -360,6 +294,7 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
@@ -370,7 +305,7 @@ class _ErrorState extends StatelessWidget {
                 size: 56, color: AppColors.error),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              '加载失败：$message',
+              l.commonErrorWithMessage(message),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -382,12 +317,12 @@ class _ErrorState extends StatelessWidget {
                   .read<HistoryBloc>()
                   .add(const HistoryLoadRequested(refresh: true)),
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('重试'),
+              label: Text(l.commonRetry),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 side: const BorderSide(color: AppColors.primary),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderRadius: BorderRadius.circular(AppRadius.button),
                 ),
               ),
             ),

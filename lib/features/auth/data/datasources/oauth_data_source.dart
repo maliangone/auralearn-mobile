@@ -65,7 +65,14 @@ abstract class OAuthDataSource {
 /// =====================================================================
 class OAuthDataSourceImpl implements OAuthDataSource {
   final GoogleSignIn _googleSignIn;
-  final fb.FirebaseAuth _firebaseAuth;
+  final fb.FirebaseAuth? _firebaseAuthOverride;
+
+  /// Resolved lazily: `FirebaseAuth.instance` throws when Firebase isn't
+  /// initialized (dev mode without FIREBASE_* dart-defines), and DI builds
+  /// this object at startup — so it must never be touched in the constructor.
+  /// Sign-in methods guard on `FirebaseBootstrap.isReady` before use.
+  fb.FirebaseAuth get _firebaseAuth =>
+      _firebaseAuthOverride ?? fb.FirebaseAuth.instance;
 
   /// Both are injectable for testing. The default GoogleSignIn uses the Web
   /// client ID from the FIREBASE_WEB_CLIENT_ID dart-define (when provided) so
@@ -79,7 +86,7 @@ class OAuthDataSourceImpl implements OAuthDataSource {
                 defaultValue: '',
               ),
             ),
-        _firebaseAuth = firebaseAuth ?? fb.FirebaseAuth.instance;
+        _firebaseAuthOverride = firebaseAuth;
 
   @override
   Future<OAuthUser> signInWithGoogle() async {

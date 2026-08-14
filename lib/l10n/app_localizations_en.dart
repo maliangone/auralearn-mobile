@@ -62,6 +62,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonGoSettings => 'Open settings';
 
   @override
+  String get commonClear => 'Clear';
+
+  @override
   String get timeJustNow => 'just now';
 
   @override
@@ -426,6 +429,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cropSubmitQuestion => 'Submit Question';
 
   @override
+  String get cropInstruction => 'Drag the corners to select the question area';
+
+  @override
+  String get cropInstructionSub =>
+      'Make sure the entire question is within the blue area';
+
+  @override
+  String get cropReset => 'Reset crop area';
+
+  @override
+  String cropErrorUncropped(int n) {
+    return 'Please crop image $n before submitting.';
+  }
+
+  @override
+  String get cropProcessFailed => 'Failed to process images. Please try again.';
+
+  @override
   String get questionTitle => 'Solve';
 
   @override
@@ -550,6 +571,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get historyDeleteItem => 'Delete this record';
+
+  @override
+  String get historyDetailTitle => 'Problem Detail';
+
+  @override
+  String get historyDetailPlaceholderTitle => 'Detail view coming soon';
+
+  @override
+  String get historyDetailPlaceholderSubtitle =>
+      'A full step-by-step view of this problem is on the way.';
 
   @override
   String get subTitle => 'Member';
@@ -839,6 +870,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Problems you get wrong show up here for easy review';
 
   @override
+  String get errorBookDeleteConfirm =>
+      'Delete this card from your mistake book?';
+
+  @override
   String get docsTitle => 'My Materials';
 
   @override
@@ -895,4 +930,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get docsDeleteItem => 'Delete this material';
+
+  @override
+  String get docsDeleteConfirm =>
+      'Delete this material? This cannot be undone.';
+
+  @override
+  String get docsTypeImage => 'Image';
+
+  @override
+  String get docsTypeText => 'Text';
 }

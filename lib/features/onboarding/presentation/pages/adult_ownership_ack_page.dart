@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/storage/local_storage.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Phase C — Required age-gate / parent-teacher ownership acknowledgment.
 ///
@@ -32,10 +34,24 @@ class AdultOwnershipAckPage extends StatefulWidget {
 
 class _AdultOwnershipAckPageState extends State<AdultOwnershipAckPage> {
   bool _acknowledged = false;
+  late final TapGestureRecognizer _privacyRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _privacyRecognizer = TapGestureRecognizer()..onTap = _openPrivacyPolicy;
+  }
+
+  @override
+  void dispose() {
+    _privacyRecognizer.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -52,9 +68,9 @@ class _AdultOwnershipAckPageState extends State<AdultOwnershipAckPage> {
                 child: Container(
                   height: 96,
                   width: 96,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(AppRadius.xxl),
+                    borderRadius: BorderRadius.all(AppRadius.rHero),
                   ),
                   child: const Icon(
                     Icons.verified_user_outlined,
@@ -68,7 +84,7 @@ class _AdultOwnershipAckPageState extends State<AdultOwnershipAckPage> {
 
               // Title
               Text(
-                '家长 / 老师确认',
+                l.adultAckTitle,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
@@ -80,7 +96,7 @@ class _AdultOwnershipAckPageState extends State<AdultOwnershipAckPage> {
 
               // Explanatory body
               Text(
-                '本应用面向 K-12 学生，账号由家长或老师（已满 18 岁）创建并管理。',
+                l.adultAckBody,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: AppColors.textSecondary,
@@ -90,11 +106,13 @@ class _AdultOwnershipAckPageState extends State<AdultOwnershipAckPage> {
 
               const Spacer(),
 
-              // Acknowledgment checkbox card
+              // Acknowledgment checkbox card — whole card toggles; the
+              // Checkbox keeps the default (≥44px) Material tap target.
               Container(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderRadius:
+                      const BorderRadius.all(AppRadius.rCard),
                   border: Border.all(
                     color: _acknowledged
                         ? AppColors.primary
@@ -103,7 +121,7 @@ class _AdultOwnershipAckPageState extends State<AdultOwnershipAckPage> {
                   ),
                 ),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderRadius: const BorderRadius.all(AppRadius.rCard),
                   onTap: () => setState(() => _acknowledged = !_acknowledged),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -116,9 +134,6 @@ class _AdultOwnershipAckPageState extends State<AdultOwnershipAckPage> {
                         Checkbox(
                           value: _acknowledged,
                           activeColor: AppColors.primary,
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
                           onChanged: (value) => setState(
                             () => _acknowledged = value ?? false,
                           ),
@@ -126,8 +141,8 @@ class _AdultOwnershipAckPageState extends State<AdultOwnershipAckPage> {
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.only(top: AppSpacing.xs),
-                            child: _buildAcknowledgmentText(theme),
+                            padding: const EdgeInsets.only(top: AppSpacing.md),
+                            child: _buildAcknowledgmentText(theme, l),
                           ),
                         ),
                       ],
@@ -149,11 +164,11 @@ class _AdultOwnershipAckPageState extends State<AdultOwnershipAckPage> {
                     disabledBackgroundColor: AppColors.border,
                     disabledForegroundColor: AppColors.textHint,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderRadius: BorderRadius.circular(AppRadius.button),
                     ),
                   ),
                   child: Text(
-                    '开始使用',
+                    l.adultAckStart,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: _acknowledged
@@ -172,7 +187,7 @@ class _AdultOwnershipAckPageState extends State<AdultOwnershipAckPage> {
     );
   }
 
-  Widget _buildAcknowledgmentText(ThemeData theme) {
+  Widget _buildAcknowledgmentText(ThemeData theme, AppLocalizations l) {
     final baseStyle = theme.textTheme.bodyMedium?.copyWith(
       color: AppColors.textPrimary,
       height: 1.5,
@@ -188,29 +203,33 @@ class _AdultOwnershipAckPageState extends State<AdultOwnershipAckPage> {
       TextSpan(
         style: baseStyle,
         children: [
-          const TextSpan(
-            text: '我已年满 18 岁，作为家长/老师创建并管理此账号，并同意',
-          ),
+          TextSpan(text: '${l.adultAckCheckbox} '),
           TextSpan(
-            text: '《隐私政策》',
+            text: l.adultAckPrivacy,
             style: linkStyle,
-            recognizer: TapGestureRecognizer()..onTap = _openPrivacyPolicy,
+            recognizer: _privacyRecognizer,
           ),
         ],
       ),
     );
   }
 
-  void _openPrivacyPolicy() {
-    // TODO(integration): url_launcher is not a dependency. When it is added,
-    // launch AdultOwnershipAckPage.privacyPolicyUrl here. For now, surface the
-    // URL so the action is visible and non-blocking.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('隐私政策：${AdultOwnershipAckPage.privacyPolicyUrl}'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  Future<void> _openPrivacyPolicy() async {
+    try {
+      await launchUrl(
+        Uri.parse(AdultOwnershipAckPage.privacyPolicyUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).commonErrorTitle),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   void _completeOnboarding() async {

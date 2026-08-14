@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/widgets/app_empty_state.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/flashcard.dart';
 import '../bloc/error_book_bloc.dart';
 import '../bloc/error_book_event.dart';
@@ -12,7 +14,8 @@ import '../bloc/error_book_state.dart';
 ///
 /// Route: `/flashcards/errorbook`. Each row shows the front (problem) with a
 /// subject chip and a next-review hint; tapping expands the detail (answer);
-/// a trailing button or swipe deletes the card. Covers loading / empty / error.
+/// a trailing button or swipe deletes the card (both behind a confirmation).
+/// Covers loading / empty / error.
 class ErrorBookPage extends StatefulWidget {
   const ErrorBookPage({super.key});
 
@@ -29,6 +32,8 @@ class _ErrorBookPageState extends State<ErrorBookPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -36,7 +41,7 @@ class _ErrorBookPageState extends State<ErrorBookPage> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          '错题本',
+          l.errorBookTitle,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
@@ -46,7 +51,7 @@ class _ErrorBookPageState extends State<ErrorBookPage> {
           IconButton(
             icon: const Icon(Icons.school_outlined,
                 color: AppColors.primary),
-            tooltip: '今日复习',
+            tooltip: l.reviewTitle,
             onPressed: () => context.go('/flashcards/review'),
           ),
         ],
@@ -114,19 +119,65 @@ class _CardTileState extends State<_CardTile> {
         .add(ErrorBookDeleteRequested(id: widget.card.id));
   }
 
+  /// Confirmation gate shared by swipe-to-delete and the delete icon.
+  Future<bool> _confirmDelete() async {
+    final l = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        title: Text(l.commonDelete),
+        content: Text(l.errorBookDeleteConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            style:
+                TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+            child: Text(l.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.textOnPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.button),
+              ),
+            ),
+            child: Text(l.commonDelete),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
+  Future<void> _onDeleteTap() async {
+    if (await _confirmDelete() && mounted) {
+      _delete();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final textTheme = Theme.of(context).textTheme;
     final card = widget.card;
     return Dismissible(
       key: ValueKey(card.id),
       direction: DismissDirection.endToStart,
+      confirmDismiss: (_) => _confirmDelete(),
       onDismissed: (_) => _delete(),
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         decoration: BoxDecoration(
           color: AppColors.errorLight,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(AppRadius.card),
         ),
         child: const Icon(Icons.delete_outline_rounded,
             color: AppColors.error),
@@ -134,15 +185,15 @@ class _CardTileState extends State<_CardTile> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           onTap: () => setState(() => _expanded = !_expanded),
           child: Container(
             padding: const EdgeInsets.all(AppSpacing.base),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.border),
-              boxShadow: AppShadows.card,
+              boxShadow: AppShadows.soft,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,14 +220,13 @@ class _CardTileState extends State<_CardTile> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            card.front.isEmpty ? '（无题目）' : card.front,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.textPrimary,
-                                ),
+                            card.front.isEmpty
+                                ? l.historyNoQuestionText
+                                : card.front,
+                            style: textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textPrimary,
+                            ),
                             maxLines: _expanded ? null : 2,
                             overflow: _expanded
                                 ? TextOverflow.visible
@@ -193,11 +243,8 @@ class _CardTileState extends State<_CardTile> {
                               Flexible(
                                 child: Text(
                                   _dueHint(card),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                          color: AppColors.textHint),
+                                  style: textTheme.bodySmall
+                                      ?.copyWith(color: AppColors.textHint),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -209,8 +256,8 @@ class _CardTileState extends State<_CardTile> {
                     IconButton(
                       icon: const Icon(Icons.delete_outline_rounded,
                           size: 20, color: AppColors.textHint),
-                      tooltip: '删除',
-                      onPressed: _delete,
+                      tooltip: l.commonDelete,
+                      onPressed: _onDeleteTap,
                     ),
                   ],
                 ),
@@ -223,7 +270,8 @@ class _CardTileState extends State<_CardTile> {
                       color: AppColors.encourageLight,
                       borderRadius: BorderRadius.circular(AppRadius.md),
                       border: Border.all(
-                          color: AppColors.encourage.withAlpha(60)),
+                          color:
+                              AppColors.encourage.withValues(alpha: 60 / 255)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,23 +282,19 @@ class _CardTileState extends State<_CardTile> {
                                 size: 16, color: AppColors.encourage),
                             const SizedBox(width: AppSpacing.sm),
                             Text(
-                              '答案',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelMedium
-                                  ?.copyWith(
-                                    color: AppColors.encourage,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                              l.reviewAnswer,
+                              style: textTheme.labelMedium?.copyWith(
+                                color: AppColors.encourage,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         Text(
-                          card.back.isEmpty ? '（无答案）' : card.back,
-                          style: const TextStyle(
+                          card.back.isEmpty ? l.questionNoAnswer : card.back,
+                          style: textTheme.bodyMedium?.copyWith(
                             color: AppColors.textPrimary,
-                            fontSize: 14,
                             height: 1.5,
                           ),
                         ),
@@ -268,16 +312,17 @@ class _CardTileState extends State<_CardTile> {
 
   /// Human-friendly next-review hint based on [Flashcard.dueAt].
   String _dueHint(Flashcard card) {
+    final l = AppLocalizations.of(context);
     final now = DateTime.now();
     final due = card.dueAt;
     if (!due.isAfter(now)) {
-      return '待复习';
+      return l.reviewDue;
     }
     final days = due.difference(now).inDays;
     if (days <= 0) {
-      return '明天复习';
+      return l.reviewTomorrow;
     }
-    return '$days 天后复习';
+    return l.reviewInDays(days);
   }
 }
 
@@ -289,53 +334,14 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.style_outlined,
-              size: 64,
-              color: AppColors.textHint,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              '错题本还是空的',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              "解题后点'加入错题本'",
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            FilledButton.icon(
-              onPressed: () => context.go('/camera'),
-              icon: const Icon(Icons.camera_alt_outlined, size: 18),
-              label: const Text('去拍照解题'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textOnPrimary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xl,
-                  vertical: AppSpacing.md,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    final l = AppLocalizations.of(context);
+    return AppEmptyState(
+      illustration: 'assets/illustrations/empty_errorbook.svg',
+      title: l.errorBookEmpty,
+      subtitle: l.errorBookEmptySubtitle,
+      ctaLabel: l.homeGoSolve,
+      onCta: () => context.go('/camera'),
+      inline: true,
     );
   }
 }
@@ -346,6 +352,7 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
@@ -356,7 +363,7 @@ class _ErrorView extends StatelessWidget {
                 size: 56, color: AppColors.error),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              '加载失败：$message',
+              l.commonErrorWithMessage(message),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
@@ -368,12 +375,12 @@ class _ErrorView extends StatelessWidget {
                   .read<ErrorBookBloc>()
                   .add(const ErrorBookLoadRequested()),
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('重试'),
+              label: Text(l.commonRetry),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 side: const BorderSide(color: AppColors.primary),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderRadius: BorderRadius.circular(AppRadius.button),
                 ),
               ),
             ),
@@ -400,15 +407,14 @@ class _SubjectChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
       ),
       child: Text(
         subject,
-        style: const TextStyle(
-          color: AppColors.primary,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }

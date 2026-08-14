@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:io';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../widgets/image_crop_widget.dart';
 
+/// Dark-canvas crop screen. The dark surround is intentional (image-editing
+/// convention); brand tokens drive the accent colours.
 class CropPage extends StatefulWidget {
   final List<String> imagePaths;
 
@@ -24,6 +26,14 @@ class _CropPageState extends State<CropPage> {
   List<Rect> _cropAreas = [];
   bool _isProcessing = false;
 
+  // Dark canvas palette (deliberate — crop UI reads best on black).
+  static const Color _canvas = Colors.black;
+  static const Color _onCanvas = Colors.white;
+  static final Color _onCanvasMuted =
+      Colors.white.withValues(alpha: 0.7);
+  static final Color _onCanvasFaint =
+      Colors.white.withValues(alpha: 0.3);
+
   @override
   void initState() {
     super.initState();
@@ -33,23 +43,27 @@ class _CropPageState extends State<CropPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: _canvas,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Text('Crop Questions (${_currentImageIndex + 1}/${widget.imagePaths.length})'),
+        backgroundColor: _canvas,
+        foregroundColor: _onCanvas,
+        title: Text(
+          '${l.cropTitle} (${_currentImageIndex + 1}/${widget.imagePaths.length})',
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: l.commonBack,
           onPressed: () => context.pop(),
         ),
         actions: [
           TextButton(
             onPressed: _isProcessing ? null : _submitCroppedImages,
             child: Text(
-              'Submit',
+              l.cropSubmit,
               style: TextStyle(
-                color: _isProcessing ? Colors.grey : Colors.white,
+                color: _isProcessing ? _onCanvasFaint : _onCanvas,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -61,28 +75,28 @@ class _CropPageState extends State<CropPage> {
           // Instructions
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: AppTheme.primary.withOpacity(0.1),
+            padding: const EdgeInsets.all(AppSpacing.base),
+            color: _onCanvas.withValues(alpha: 0.08),
             child: Column(
               children: [
-                Icon(
-                  Icons.crop,
-                  color: AppTheme.primary,
+                const Icon(
+                  Icons.crop_rounded,
+                  color: AppColors.primaryLight,
                   size: 24,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Drag the corners to select the question area',
+                  l.cropInstruction,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
-                  ),
+                        color: _onCanvas,
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 Text(
-                  'Make sure the entire question is within the blue area',
+                  l.cropInstructionSub,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white70,
-                  ),
+                        color: _onCanvasMuted,
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -101,7 +115,7 @@ class _CropPageState extends State<CropPage> {
               itemCount: widget.imagePaths.length,
               itemBuilder: (context, index) {
                 return Container(
-                  margin: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.all(AppSpacing.base),
                   child: ImageCropWidget(
                     imagePath: widget.imagePaths[index],
                     initialCropArea: _cropAreas[index],
@@ -115,94 +129,96 @@ class _CropPageState extends State<CropPage> {
           ),
 
           // Navigation and controls
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                // Page indicator
-                if (widget.imagePaths.length > 1)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      widget.imagePaths.length,
-                      (index) => Container(
-                        width: _currentImageIndex == index ? 24 : 8,
-                        height: 8,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          color: _currentImageIndex == index
-                              ? AppTheme.primary
-                              : Colors.white30,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                const SizedBox(height: 16),
-
-                // Navigation buttons
-                Row(
-                  children: [
-                    if (_currentImageIndex > 0)
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _previousImage,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white),
+          SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.base),
+              child: Column(
+                children: [
+                  // Page indicator
+                  if (widget.imagePaths.length > 1)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        widget.imagePaths.length,
+                        (index) => Container(
+                          width: _currentImageIndex == index ? 24 : 8,
+                          height: 8,
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.xs),
+                          decoration: BoxDecoration(
+                            color: _currentImageIndex == index
+                                ? AppColors.primary
+                                : _onCanvasFaint,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.xs),
                           ),
-                          child: const Text('Previous'),
                         ),
-                      ),
-                    
-                    if (_currentImageIndex > 0) const SizedBox(width: 16),
-                    
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _isProcessing 
-                            ? null 
-                            : _currentImageIndex < widget.imagePaths.length - 1
-                                ? _nextImage
-                                : _submitCroppedImages,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: _isProcessing
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : Text(
-                                _currentImageIndex < widget.imagePaths.length - 1
-                                    ? 'Next Image'
-                                    : 'Submit Question',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
                       ),
                     ),
-                  ],
-                ),
 
-                const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.base),
 
-                // Reset crop button
-                TextButton(
-                  onPressed: _resetCurrentCrop,
-                  child: const Text(
-                    'Reset crop area',
-                    style: TextStyle(color: Colors.white70),
+                  // Navigation buttons
+                  Row(
+                    children: [
+                      if (_currentImageIndex > 0)
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _previousImage,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: _onCanvas,
+                              side: BorderSide(color: _onCanvasMuted),
+                            ),
+                            child: Text(l.onboardingPrevious),
+                          ),
+                        ),
+
+                      if (_currentImageIndex > 0)
+                        const SizedBox(width: AppSpacing.base),
+
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _isProcessing
+                              ? null
+                              : _currentImageIndex <
+                                      widget.imagePaths.length - 1
+                                  ? _nextImage
+                                  : _submitCroppedImages,
+                          child: _isProcessing
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor:
+                                        AlwaysStoppedAnimation<Color>(
+                                            AppColors.textOnPrimary),
+                                  ),
+                                )
+                              : Text(
+                                  _currentImageIndex <
+                                          widget.imagePaths.length - 1
+                                      ? l.cropNextImage
+                                      : l.cropSubmitQuestion,
+                                ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: AppSpacing.sm),
+
+                  // Reset crop button
+                  TextButton(
+                    onPressed: _resetCurrentCrop,
+                    child: Text(
+                      l.cropReset,
+                      style: TextStyle(color: _onCanvasMuted),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -213,7 +229,7 @@ class _CropPageState extends State<CropPage> {
   void _nextImage() {
     if (_currentImageIndex < widget.imagePaths.length - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
+        duration: AppMotion.staggered,
         curve: Curves.easeInOut,
       );
     }
@@ -222,7 +238,7 @@ class _CropPageState extends State<CropPage> {
   void _previousImage() {
     if (_currentImageIndex > 0) {
       _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
+        duration: AppMotion.staggered,
         curve: Curves.easeInOut,
       );
     }
@@ -239,11 +255,12 @@ class _CropPageState extends State<CropPage> {
       _isProcessing = true;
     });
 
+    final l = AppLocalizations.of(context);
     try {
       // Validate that all images have crop areas defined
       for (int i = 0; i < _cropAreas.length; i++) {
         if (_cropAreas[i] == Rect.zero) {
-          _showErrorDialog('Please crop image ${i + 1} before submitting.');
+          _showErrorDialog(l.cropErrorUncropped(i + 1));
           return;
         }
       }
@@ -265,31 +282,35 @@ class _CropPageState extends State<CropPage> {
       AppLogger.info('Submitting ${croppedImageData.length} cropped images');
 
       // Navigate to question submission page with cropped images
-      context.go('/question', extra: {
-        'images': croppedImageData,
-        'hasImages': true,
-      });
-
+      if (mounted) {
+        context.go('/question', extra: {
+          'images': croppedImageData,
+          'hasImages': true,
+        });
+      }
     } catch (e) {
       AppLogger.error('Error processing cropped images: $e');
-      _showErrorDialog('Failed to process images. Please try again.');
+      _showErrorDialog(l.cropProcessFailed);
     } finally {
-      setState(() {
-        _isProcessing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
   }
 
   void _showErrorDialog(String message) {
+    final l = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Error'),
+        title: Text(l.commonErrorTitle),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: Text(l.commonConfirm),
           ),
         ],
       ),
@@ -301,4 +322,4 @@ class _CropPageState extends State<CropPage> {
     _pageController.dispose();
     super.dispose();
   }
-} 
+}

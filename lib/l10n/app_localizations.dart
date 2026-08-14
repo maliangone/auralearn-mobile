@@ -200,6 +200,12 @@ abstract class AppLocalizations {
   /// **'Open settings'**
   String get commonGoSettings;
 
+  /// No description provided for @commonClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get commonClear;
+
   /// No description provided for @timeJustNow.
   ///
   /// In en, this message translates to:
@@ -860,6 +866,36 @@ abstract class AppLocalizations {
   /// **'Submit Question'**
   String get cropSubmitQuestion;
 
+  /// No description provided for @cropInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag the corners to select the question area'**
+  String get cropInstruction;
+
+  /// No description provided for @cropInstructionSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Make sure the entire question is within the blue area'**
+  String get cropInstructionSub;
+
+  /// No description provided for @cropReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset crop area'**
+  String get cropReset;
+
+  /// No description provided for @cropErrorUncropped.
+  ///
+  /// In en, this message translates to:
+  /// **'Please crop image {n} before submitting.'**
+  String cropErrorUncropped(int n);
+
+  /// No description provided for @cropProcessFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to process images. Please try again.'**
+  String get cropProcessFailed;
+
   /// No description provided for @questionTitle.
   ///
   /// In en, this message translates to:
@@ -1093,6 +1129,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete this record'**
   String get historyDeleteItem;
+
+  /// No description provided for @historyDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Problem Detail'**
+  String get historyDetailTitle;
+
+  /// No description provided for @historyDetailPlaceholderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Detail view coming soon'**
+  String get historyDetailPlaceholderTitle;
+
+  /// No description provided for @historyDetailPlaceholderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A full step-by-step view of this problem is on the way.'**
+  String get historyDetailPlaceholderSubtitle;
 
   /// No description provided for @subTitle.
   ///
@@ -1628,6 +1682,12 @@ abstract class AppLocalizations {
   /// **'Problems you get wrong show up here for easy review'**
   String get errorBookEmptySubtitle;
 
+  /// No description provided for @errorBookDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this card from your mistake book?'**
+  String get errorBookDeleteConfirm;
+
   /// No description provided for @docsTitle.
   ///
   /// In en, this message translates to:
@@ -1723,6 +1783,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete this material'**
   String get docsDeleteItem;
+
+  /// No description provided for @docsDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this material? This cannot be undone.'**
+  String get docsDeleteConfirm;
+
+  /// No description provided for @docsTypeImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get docsTypeImage;
+
+  /// No description provided for @docsTypeText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get docsTypeText;
 }
 
 class _AppLocalizationsDelegate

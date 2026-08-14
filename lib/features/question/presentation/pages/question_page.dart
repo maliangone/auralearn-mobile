@@ -3,11 +3,14 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../flashcards/domain/usecases/create_flashcard_from_history_usecase.dart';
 import '../bloc/question_bloc.dart';
 import '../bloc/question_event.dart';
@@ -98,7 +101,7 @@ class _QuestionPageState extends State<QuestionPage> {
     } catch (e) {
       AppLogger.error('Failed to read captured images: $e');
       if (mounted) {
-        _showErrorSnackBar('无法读取图片，请重新拍摄。');
+        _showErrorSnackBar(AppLocalizations.of(context).cameraImageReadFailed);
       }
     } finally {
       if (mounted) setState(() => _preparingImages = false);
@@ -118,22 +121,23 @@ class _QuestionPageState extends State<QuestionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('解题'),
+        title: Text(l.questionTitle),
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.camera_alt_outlined),
-            tooltip: '拍照',
+            tooltip: l.cameraTakePhoto,
             onPressed: () => context.go('/camera'),
           ),
           IconButton(
             icon: const Icon(Icons.history),
-            tooltip: '历史',
+            tooltip: l.navHistory,
             onPressed: () => context.go('/history'),
           ),
         ],
@@ -145,6 +149,7 @@ class _QuestionPageState extends State<QuestionPage> {
   // --- Streaming solve UI ---------------------------------------------------
 
   Widget _buildSolveBody() {
+    final l = AppLocalizations.of(context);
     return BlocBuilder<QuestionBloc, QuestionState>(
       builder: (context, state) {
         if (_preparingImages || state is QuestionSolveInProgress) {
@@ -152,7 +157,7 @@ class _QuestionPageState extends State<QuestionPage> {
             children: [
               const _RecognizingBanner(),
               const SizedBox(height: AppSpacing.xl),
-              _centeredLoader('正在识别题目…'),
+              _centeredLoader(l.questionRecognizing),
             ],
           );
         }
@@ -164,7 +169,7 @@ class _QuestionPageState extends State<QuestionPage> {
               const SizedBox(height: AppSpacing.md),
               _ProblemCard(problem: state.problem),
               const SizedBox(height: AppSpacing.xl),
-              _centeredLoader('正在解答…'),
+              _centeredLoader(l.questionSolving),
               const SizedBox(height: AppSpacing.lg),
               _retakeRow(),
             ],
@@ -235,7 +240,7 @@ class _QuestionPageState extends State<QuestionPage> {
           children: [
             const _RecognizingBanner(),
             const SizedBox(height: AppSpacing.xl),
-            _centeredLoader('正在识别题目…'),
+            _centeredLoader(l.questionRecognizing),
           ],
         );
       },
@@ -258,10 +263,9 @@ class _QuestionPageState extends State<QuestionPage> {
           const SizedBox(height: AppSpacing.md),
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 14,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
           ),
         ],
       ),
@@ -269,12 +273,13 @@ class _QuestionPageState extends State<QuestionPage> {
   }
 
   Widget _retakeRow() {
+    final l = AppLocalizations.of(context);
     return Align(
       alignment: Alignment.centerLeft,
       child: TextButton.icon(
         onPressed: () => context.go('/camera'),
         icon: const Icon(Icons.camera_alt_outlined, size: 18),
-        label: const Text('重新拍摄'),
+        label: Text(l.questionRetake),
         style: TextButton.styleFrom(foregroundColor: AppColors.primary),
       ),
     );
@@ -283,12 +288,13 @@ class _QuestionPageState extends State<QuestionPage> {
   // --- Legacy text-submit fallback ------------------------------------------
 
   Widget _buildLegacyBody() {
+    final l = AppLocalizations.of(context);
     return BlocListener<QuestionBloc, QuestionState>(
       listener: (context, state) {
         if (state is QuestionSubmitSuccess) {
           setState(() {
             _legacySubmitting = false;
-            _legacyAnswer = state.response.answer ?? '暂无解答';
+            _legacyAnswer = state.response.answer ?? l.questionNoAnswer;
           });
           _scrollToBottom();
         } else if (state is QuestionSubmitFailure) {
@@ -305,10 +311,18 @@ class _QuestionPageState extends State<QuestionPage> {
               controller: _scrollController,
               padding: const EdgeInsets.all(AppSpacing.base),
               children: [
-                const _LegacyWelcome(),
+                _LegacyWelcome(
+                  onSampleTap: (sample) {
+                    _textController.text = sample;
+                    _textController.selection = TextSelection.collapsed(
+                      offset: sample.length,
+                    );
+                    _focusNode.requestFocus();
+                  },
+                ),
                 if (_legacySubmitting) ...[
                   const SizedBox(height: AppSpacing.lg),
-                  _centeredLoader('正在解答…'),
+                  _centeredLoader(l.questionSolving),
                 ],
                 if (_legacyAnswer != null) ...[
                   const SizedBox(height: AppSpacing.lg),
@@ -401,11 +415,12 @@ class _RecognizingBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _Banner(
+    final l = AppLocalizations.of(context);
+    return _Banner(
       icon: Icons.image_search,
       color: AppColors.primary,
       bg: AppColors.primaryLight,
-      label: '正在识别题目',
+      label: l.questionRecognizing,
     );
   }
 }
@@ -415,11 +430,12 @@ class _RecognizedBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _Banner(
+    final l = AppLocalizations.of(context);
+    return _Banner(
       icon: Icons.check_circle_outline,
       color: AppColors.primary,
       bg: AppColors.primaryLight,
-      label: '识别到的题目',
+      label: l.questionRecognized,
     );
   }
 }
@@ -446,7 +462,7 @@ class _Banner extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -455,11 +471,10 @@ class _Banner extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Text(
             label,
-            style: TextStyle(
-              color: color,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ],
       ),
@@ -473,21 +488,22 @@ class _ProblemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.base),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.border),
       ),
       child: Text(
-        problem.isEmpty ? '（未识别到题目文本）' : problem,
-        style: const TextStyle(
-          color: AppColors.textPrimary,
-          fontSize: 15,
-          height: 1.5,
-        ),
+        problem.isEmpty ? l.questionNoTextRecognized : problem,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textPrimary,
+              fontSize: 15,
+              height: 1.5,
+            ),
       ),
     );
   }
@@ -501,13 +517,14 @@ class _StepsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: Text(
-            '解题步骤',
+            l.questionSteps,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
@@ -588,12 +605,13 @@ class _ConclusionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.base),
       decoration: BoxDecoration(
         color: AppColors.encourageLight,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.encourage.withAlpha(80)),
       ),
       child: Column(
@@ -605,7 +623,7 @@ class _ConclusionCard extends StatelessWidget {
                   size: 18, color: AppColors.encourage),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                '结论',
+                l.questionConclusion,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
@@ -615,22 +633,21 @@ class _ConclusionCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            conclusion.isEmpty ? '（无结论）' : conclusion,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 15,
-              height: 1.5,
-              fontWeight: FontWeight.w600,
-            ),
+            conclusion.isEmpty ? l.questionNoConclusion : conclusion,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                  height: 1.5,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           if (model.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
             Text(
-              '由 $model 解答',
-              style: const TextStyle(
-                color: AppColors.textHint,
-                fontSize: 12,
-              ),
+              l.questionSolvedBy(model),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textHint,
+                  ),
             ),
           ],
         ],
@@ -663,6 +680,7 @@ class _AddToErrorBookButtonState extends State<_AddToErrorBookButton> {
     if (_saving || _saved) return;
     setState(() => _saving = true);
 
+    final l = AppLocalizations.of(context);
     final a = widget.answered;
     final back = _buildBack(a);
     // The persisted history id is not exposed on QuestionAnswered, so we derive
@@ -681,33 +699,35 @@ class _AddToErrorBookButtonState extends State<_AddToErrorBookButton> {
       result.fold(
         (failure) {
           setState(() => _saving = false);
-          _showSnack('加入失败：${failure.message}', AppColors.error);
+          AppLogger.error('Add to error-book failed: ${failure.message}');
+          _showSnack(l.questionAddFailed, AppColors.error);
         },
         (_) {
           setState(() {
             _saving = false;
             _saved = true;
           });
-          _showSnack('已加入错题本', AppColors.encourage);
+          _showSnack(l.questionAddedToErrorBook, AppColors.encourage);
         },
       );
     } catch (e) {
       AppLogger.error('Add to error-book failed: $e');
       if (!mounted) return;
       setState(() => _saving = false);
-      _showSnack('加入失败，请稍后再试', AppColors.error);
+      _showSnack(l.questionAddFailed, AppColors.error);
     }
   }
 
   /// Back of the card = conclusion + numbered steps.
   String _buildBack(QuestionAnswered a) {
+    final l = AppLocalizations.of(context);
     final buffer = StringBuffer();
     if (a.conclusion.isNotEmpty) {
-      buffer.writeln('结论：${a.conclusion}');
+      buffer.writeln('${l.questionConclusion}: ${a.conclusion}');
     }
     if (a.steps.isNotEmpty) {
       if (buffer.isNotEmpty) buffer.writeln();
-      buffer.writeln('解题步骤：');
+      buffer.writeln('${l.questionSteps}:');
       for (var i = 0; i < a.steps.length; i++) {
         buffer.writeln('${i + 1}. ${a.steps[i]}');
       }
@@ -727,6 +747,7 @@ class _AddToErrorBookButtonState extends State<_AddToErrorBookButton> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
@@ -745,7 +766,8 @@ class _AddToErrorBookButtonState extends State<_AddToErrorBookButton> {
                 _saved ? Icons.check_rounded : Icons.bookmark_add_outlined,
                 size: 18,
               ),
-        label: Text(_saved ? '已加入错题本' : '加入错题本'),
+        label:
+            Text(_saved ? l.questionAddedToErrorBook : l.questionAddToErrorBook),
         style: OutlinedButton.styleFrom(
           foregroundColor:
               _saved ? AppColors.encourage : AppColors.primary,
@@ -754,7 +776,7 @@ class _AddToErrorBookButtonState extends State<_AddToErrorBookButton> {
           ),
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderRadius: BorderRadius.circular(AppRadius.button),
           ),
         ),
       ),
@@ -768,12 +790,13 @@ class _UpgradePrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
         color: AppColors.warningLight,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.warning.withAlpha(80)),
       ),
       child: Column(
@@ -782,7 +805,7 @@ class _UpgradePrompt extends StatelessWidget {
               size: 40, color: AppColors.warning),
           const SizedBox(height: AppSpacing.md),
           Text(
-            '今日免费额度已用完（3/天）',
+            l.questionQuotaUsedUp(AppConfig.freeDailyQuota),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
@@ -790,17 +813,21 @@ class _UpgradePrompt extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: AppSpacing.xs),
-          const Text(
-            '升级解锁更多解题次数',
+          Text(
+            l.questionQuotaUpgradeHint,
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
           ),
           if (message.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textHint, fontSize: 12),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textHint,
+                  ),
             ),
           ],
           const SizedBox(height: AppSpacing.lg),
@@ -813,10 +840,13 @@ class _UpgradePrompt extends StatelessWidget {
                 foregroundColor: AppColors.textOnPrimary,
                 padding:
                     const EdgeInsets.symmetric(vertical: AppSpacing.base - 2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.button),
+                ),
               ),
-              child: const Text(
-                '立即升级',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              child: Text(
+                l.questionUpgradeNow,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -832,12 +862,13 @@ class _InterruptedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.base),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
@@ -845,10 +876,12 @@ class _InterruptedCard extends StatelessWidget {
           const Icon(Icons.signal_wifi_statusbar_connected_no_internet_4,
               size: 32, color: AppColors.warning),
           const SizedBox(height: AppSpacing.md),
-          const Text(
-            '解答中断了，连接似乎断开。',
+          Text(
+            l.questionInterrupted,
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
           ),
           const SizedBox(height: AppSpacing.base),
           SizedBox(
@@ -856,12 +889,15 @@ class _InterruptedCard extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: onRestart,
               icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('重新解答'),
+              label: Text(l.questionRetrySolve),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.textOnPrimary,
                 padding:
                     const EdgeInsets.symmetric(vertical: AppSpacing.base - 2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.button),
+                ),
               ),
             ),
           ),
@@ -879,12 +915,13 @@ class _FailureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.base),
       decoration: BoxDecoration(
         color: AppColors.errorLight,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.error.withAlpha(80)),
       ),
       child: Column(
@@ -892,12 +929,11 @@ class _FailureCard extends StatelessWidget {
           const Icon(Icons.error_outline, size: 32, color: AppColors.error),
           const SizedBox(height: AppSpacing.md),
           Text(
-            message.isEmpty ? '解答失败，请重试。' : message,
+            message.isEmpty ? l.questionSolveFailed : message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 14,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                ),
           ),
           const SizedBox(height: AppSpacing.base),
           SizedBox(
@@ -905,12 +941,15 @@ class _FailureCard extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('重试'),
+              label: Text(l.commonRetry),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.textOnPrimary,
                 padding:
                     const EdgeInsets.symmetric(vertical: AppSpacing.base - 2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.button),
+                ),
               ),
             ),
           ),
@@ -921,22 +960,98 @@ class _FailureCard extends StatelessWidget {
 }
 
 class _LegacyWelcome extends StatelessWidget {
-  const _LegacyWelcome();
+  /// Called when a sample-question chip is tapped — fills the input field.
+  final ValueChanged<String>? onSampleTap;
+
+  const _LegacyWelcome({this.onSampleTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.base),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: const Text(
-        '输入你的问题，或点击相机拍下题目。',
-        style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-      ),
+    final l = AppLocalizations.of(context);
+    final samples = [l.questionSample1, l.questionSample2, l.questionSample3];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Brand illustration + hint card
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              SvgPicture.asset(
+                'assets/illustrations/question_empty.svg',
+                width: 140,
+                height: 140,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                l.questionEmptyHint,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: AppSpacing.lg),
+
+        // Sample questions — one tap drops the text into the input field.
+        Text(
+          l.questionTryThese,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        for (final sample in samples)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: InkWell(
+              onTap: () => onSampleTap?.call(sample),
+              borderRadius: BorderRadius.circular(AppRadius.button),
+              child: Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(minHeight: 44),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.base,
+                  vertical: AppSpacing.md,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(AppRadius.button),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        sample,
+                        style:
+                            Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

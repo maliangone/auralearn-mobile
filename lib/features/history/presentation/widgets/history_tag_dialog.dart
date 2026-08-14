@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/tokens.dart';
+import '../../../../../l10n/app_localizations.dart';
 
 /// Modal dialog for adding/removing tags on a history item.
 ///
-/// Returns the final `List<String>` of tags when the user taps "确定", or
+/// Returns the final `List<String>` of tags when the user taps confirm, or
 /// `null` if they dismiss/cancel. The dialog is self-contained — no BLoC
 /// reference — so the caller decides what to dispatch.
 Future<List<String>?> showTagEditDialog(
@@ -72,11 +73,14 @@ class _TagEditDialogState extends State<_TagEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final textTheme = Theme.of(context).textTheme;
+
     return AlertDialog(
       backgroundColor: AppColors.surface,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.xl),
+        borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       titlePadding: const EdgeInsets.fromLTRB(
         AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.md,
@@ -94,11 +98,11 @@ class _TagEditDialogState extends State<_TagEditDialog> {
               size: 20, color: AppColors.primary),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            '编辑标签',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+            l.historyEditTags,
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ),
@@ -130,15 +134,13 @@ class _TagEditDialogState extends State<_TagEditDialog> {
                     controller: _controller,
                     autofocus: _tags.isEmpty,
                     textInputAction: TextInputAction.done,
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: textTheme.bodyMedium?.copyWith(
                       color: AppColors.textPrimary,
                     ),
                     decoration: InputDecoration(
-                      hintText: '输入标签，逗号分隔',
-                      hintStyle: const TextStyle(
+                      hintText: l.historyTagsHint,
+                      hintStyle: textTheme.bodyMedium?.copyWith(
                         color: AppColors.textHint,
-                        fontSize: 14,
                       ),
                       errorText: _inputError,
                       isDense: true,
@@ -149,15 +151,15 @@ class _TagEditDialogState extends State<_TagEditDialog> {
                       filled: true,
                       fillColor: AppColors.background,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        borderRadius: BorderRadius.circular(AppRadius.button),
                         borderSide: const BorderSide(color: AppColors.border),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        borderRadius: BorderRadius.circular(AppRadius.button),
                         borderSide: const BorderSide(color: AppColors.border),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        borderRadius: BorderRadius.circular(AppRadius.button),
                         borderSide: const BorderSide(
                           color: AppColors.primary,
                           width: 1.5,
@@ -173,11 +175,8 @@ class _TagEditDialogState extends State<_TagEditDialog> {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              '点击已有标签可删除',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textHint,
-                    fontSize: 11,
-                  ),
+              l.historyTagsTapToDelete,
+              style: textTheme.labelSmall?.copyWith(color: AppColors.textHint),
             ),
           ],
         ),
@@ -186,7 +185,7 @@ class _TagEditDialogState extends State<_TagEditDialog> {
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
-          child: const Text('取消'),
+          child: Text(l.commonCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(List.of(_tags)),
@@ -194,10 +193,10 @@ class _TagEditDialogState extends State<_TagEditDialog> {
             backgroundColor: AppColors.primary,
             foregroundColor: AppColors.textOnPrimary,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderRadius: BorderRadius.circular(AppRadius.button),
             ),
           ),
-          child: const Text('确定'),
+          child: Text(l.commonConfirm),
         ),
       ],
     );
@@ -214,26 +213,25 @@ class _TagChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onDelete,
-      borderRadius: BorderRadius.circular(AppRadius.sm),
+      borderRadius: BorderRadius.circular(AppRadius.chip),
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.sm,
-          vertical: 3,
+          vertical: AppSpacing.xs,
         ),
         decoration: BoxDecoration(
           color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+          borderRadius: BorderRadius.circular(AppRadius.chip),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.primary,
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
             ),
             const SizedBox(width: 3),
             const Icon(Icons.close_rounded, size: 13, color: AppColors.primary),
@@ -253,10 +251,10 @@ class _AddButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.primaryLight,
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      borderRadius: BorderRadius.circular(AppRadius.button),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.button),
         child: const Padding(
           padding: EdgeInsets.all(AppSpacing.sm + 2),
           child: Icon(Icons.add_rounded, size: 20, color: AppColors.primary),

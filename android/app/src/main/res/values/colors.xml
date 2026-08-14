@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand colors for splash + adaptive icon (mirrors lib/core/theme/tokens.dart) -->
+    <color name="ic_launcher_background">#4F6EF7</color>
+    <color name="splash_background">#F8F9FC</color>
+</resources>

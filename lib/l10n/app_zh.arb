@@ -20,6 +20,7 @@
   "commonErrorWithMessage": "加载失败：{message}",
   "@commonErrorWithMessage": {"placeholders": {"message": {"type": "String"}}},
   "commonGoSettings": "去设置",
+  "commonClear": "清除",
 
   "timeJustNow": "刚刚",
   "timeMinutesAgo": "{n} 分钟前",
@@ -153,6 +154,12 @@
   "cropDragToMove": "拖动调整选区",
   "cropNextImage": "下一张",
   "cropSubmitQuestion": "提交问题",
+  "cropInstruction": "拖动四角，框出题目区域",
+  "cropInstructionSub": "确保整道题都在蓝色框内",
+  "cropReset": "重置选区",
+  "cropErrorUncropped": "请先框选第 {n} 张图片再提交。",
+  "@cropErrorUncropped": {"placeholders": {"n": {"type": "int"}}},
+  "cropProcessFailed": "处理图片失败，请重试。",
 
   "questionTitle": "解题",
   "questionInputHint": "输入你的问题…",
@@ -196,6 +203,9 @@
   "historyTagsTapToDelete": "点击已有标签可删除",
   "historyNoQuestionText": "（无题目文字）",
   "historyDeleteItem": "删除此记录",
+  "historyDetailTitle": "题目详情",
+  "historyDetailPlaceholderTitle": "详情页建设中",
+  "historyDetailPlaceholderSubtitle": "这道题的一步一步详解正在开发中，敬请期待",
 
   "subTitle": "会员",
   "subFree": "免费版",
@@ -297,6 +307,7 @@
   "errorBookTitle": "错题本",
   "errorBookEmpty": "错题本还是空的",
   "errorBookEmptySubtitle": "做错的题会出现在这里，方便随时复习",
+  "errorBookDeleteConfirm": "确定要从错题本删除这张卡片吗？",
 
   "docsTitle": "我的资料",
   "docsImport": "导入资料",
@@ -316,5 +327,8 @@
   "docsQuotaUsedUp": "今日免费额度已用完（每天 {quota} 题），升级后可继续",
   "@docsQuotaUsedUp": {"placeholders": {"quota": {"type": "int"}}},
   "docsAnswerInterrupted": "回答中断，请重试",
-  "docsDeleteItem": "删除此资料"
+  "docsDeleteItem": "删除此资料",
+  "docsDeleteConfirm": "确定删除这份资料吗？删除后无法恢复。",
+  "docsTypeImage": "图片",
+  "docsTypeText": "文本"
 }

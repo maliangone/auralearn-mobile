@@ -62,6 +62,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonGoSettings => '去设置';
 
   @override
+  String get commonClear => '清除';
+
+  @override
   String get timeJustNow => '刚刚';
 
   @override
@@ -416,6 +419,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cropSubmitQuestion => '提交问题';
 
   @override
+  String get cropInstruction => '拖动四角，框出题目区域';
+
+  @override
+  String get cropInstructionSub => '确保整道题都在蓝色框内';
+
+  @override
+  String get cropReset => '重置选区';
+
+  @override
+  String cropErrorUncropped(int n) {
+    return '请先框选第 $n 张图片再提交。';
+  }
+
+  @override
+  String get cropProcessFailed => '处理图片失败，请重试。';
+
+  @override
   String get questionTitle => '解题';
 
   @override
@@ -535,6 +555,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get historyDeleteItem => '删除此记录';
+
+  @override
+  String get historyDetailTitle => '题目详情';
+
+  @override
+  String get historyDetailPlaceholderTitle => '详情页建设中';
+
+  @override
+  String get historyDetailPlaceholderSubtitle => '这道题的一步一步详解正在开发中，敬请期待';
 
   @override
   String get subTitle => '会员';
@@ -816,6 +845,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorBookEmptySubtitle => '做错的题会出现在这里，方便随时复习';
 
   @override
+  String get errorBookDeleteConfirm => '确定要从错题本删除这张卡片吗？';
+
+  @override
   String get docsTitle => '我的资料';
 
   @override
@@ -868,4 +900,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get docsDeleteItem => '删除此资料';
+
+  @override
+  String get docsDeleteConfirm => '确定删除这份资料吗？删除后无法恢复。';
+
+  @override
+  String get docsTypeImage => '图片';
+
+  @override
+  String get docsTypeText => '文本';
 }

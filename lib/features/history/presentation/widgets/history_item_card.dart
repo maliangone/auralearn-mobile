@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/tokens.dart';
+import '../../../../../core/utils/time_ago.dart';
+import '../../../../../l10n/app_localizations.dart';
 import '../../domain/entities/history_item.dart';
 import 'history_tag_dialog.dart';
 
@@ -24,41 +26,11 @@ class HistoryItemCard extends StatelessWidget {
     this.isDeleting = false,
   });
 
-  String _formatDate(DateTime dt) {
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inDays == 0) {
-      return '今天 ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    } else if (diff.inDays == 1) {
-      return '昨天';
-    } else if (diff.inDays < 7) {
-      return '${diff.inDays} 天前';
-    } else {
-      return '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
-    }
-  }
-
-  Color _subjectColor(String? subject) {
-    if (subject == null) return AppColors.subjectDefault;
-    final lower = subject.toLowerCase();
-    if (lower.contains('数学') || lower.contains('math')) {
-      return AppColors.subjectMath;
-    }
-    if (lower.contains('物理') || lower.contains('physics')) {
-      return AppColors.subjectPhysics;
-    }
-    if (lower.contains('化学') || lower.contains('chem')) {
-      return AppColors.subjectChemistry;
-    }
-    if (lower.contains('生物') || lower.contains('bio')) {
-      return AppColors.subjectBiology;
-    }
-    return AppColors.subjectDefault;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final subjectColor = _subjectColor(item.subject);
+    final l = AppLocalizations.of(context);
+    final textTheme = Theme.of(context).textTheme;
+    final subjectColor = AppColors.subjectFg(item.subject ?? '');
 
     return AnimatedOpacity(
       opacity: isDeleting ? 0.4 : 1.0,
@@ -67,14 +39,14 @@ class HistoryItemCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: isDeleting ? null : onTap,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           child: Container(
             padding: const EdgeInsets.all(AppSpacing.base),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.border),
-              boxShadow: AppShadows.card,
+              boxShadow: AppShadows.soft,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,15 +76,12 @@ class HistoryItemCard extends StatelessWidget {
                           Text(
                             item.question?.isNotEmpty == true
                                 ? item.question!
-                                : '（无题目文字）',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.textPrimary,
-                                  height: 1.4,
-                                ),
+                                : l.historyNoQuestionText,
+                            style: textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textPrimary,
+                              height: 1.4,
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -129,26 +98,23 @@ class HistoryItemCard extends StatelessWidget {
                               ],
                               // Timestamp
                               Text(
-                                _formatDate(item.createdAt),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: AppColors.textHint,
-                                      fontSize: 11,
-                                    ),
+                                formatTimeAgo(context, item.createdAt),
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textHint,
+                                ),
                               ),
                             ],
                           ),
                         ],
                       ),
                     ),
-                    // Delete button
+                    // Delete button — ≥44px touch target.
                     SizedBox(
-                      width: 32,
-                      height: 32,
+                      width: 44,
+                      height: 44,
                       child: IconButton(
                         padding: EdgeInsets.zero,
+                        tooltip: l.historyDeleteItem,
                         icon: isDeleting
                             ? const SizedBox(
                                 width: 16,
@@ -160,17 +126,17 @@ class HistoryItemCard extends StatelessWidget {
                               )
                             : const Icon(
                                 Icons.delete_outline_rounded,
-                                size: 18,
+                                size: 20,
                                 color: AppColors.textHint,
                               ),
                         onPressed: isDeleting ? null : onDelete,
-                        splashRadius: 16,
+                        splashRadius: 22,
                       ),
                     ),
                   ],
                 ),
                 // Tags row (only shown when tags exist or to show the edit button)
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.xs),
                 _TagsRow(
                   tags: item.tags,
                   onEditTap: () async {
@@ -207,17 +173,16 @@ class _SubjectChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withAlpha(20),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: color.withAlpha(60)),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 11,
-          color: color,
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }
@@ -231,37 +196,54 @@ class _TagsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Row(
       children: [
         // Edit tag icon — always visible so user can discover tagging.
-        GestureDetector(
-          onTap: onEditTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.label_outline_rounded,
-                  size: 13,
-                  color: AppColors.textHint,
+        // The transparent InkWell padding widens the hit area without
+        // inflating the visual pill.
+        Tooltip(
+          message: l.historyEditTags,
+          child: InkWell(
+            onTap: onEditTap,
+            borderRadius: BorderRadius.circular(AppRadius.chip),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.md,
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
                 ),
-                if (tags.isEmpty) ...[
-                  const SizedBox(width: 3),
-                  const Text(
-                    '标签',
-                    style: TextStyle(
-                      fontSize: 11,
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(AppRadius.chip),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.label_outline_rounded,
+                      size: 13,
                       color: AppColors.textHint,
                     ),
-                  ),
-                ],
-              ],
+                    if (tags.isEmpty) ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        l.historyTags,
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelSmall
+                            ?.copyWith(color: AppColors.textHint),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -297,15 +279,14 @@ class _InlineTag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 11,
-          color: AppColors.primary,
-          fontWeight: FontWeight.w500,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w500,
+            ),
       ),
     );
   }

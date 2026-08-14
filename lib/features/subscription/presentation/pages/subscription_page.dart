@@ -1,12 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/widgets/skeleton_box.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/subscription_status.dart';
 import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
+
+/// TEMP: keys not yet in the ARB files — reported as missing. Delete this
+/// extension once the keys land in app_en.arb / app_zh.arb and regenerate.
+extension _MissingSubL10n on AppLocalizations {
+  /// en: "Upgrade to Pro for unlimited questions"
+  /// zh: "升级 Pro 解锁无限提问"
+  String get subUpgradeHint =>
+      localeName == 'zh' ? '升级 Pro 解锁无限提问' : 'Upgrade to Pro for unlimited questions';
+}
 
 class SubscriptionPage extends StatefulWidget {
   const SubscriptionPage({super.key});
@@ -24,6 +38,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -31,14 +46,28 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          '会员',
+          l.subTitle,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
         ),
       ),
-      body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
+      body: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, authState) {
+          // Guests can't load billing status — show plan cards + sign-in CTA
+          // instead of the error/offline view.
+          if (authState is! AuthAuthenticated) {
+            return const _GuestView();
+          }
+          return _buildSubscriptionBody(context, l);
+        },
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionBody(BuildContext context, AppLocalizations l) {
+    return BlocConsumer<SubscriptionBloc, SubscriptionState>(
         listenWhen: (prev, curr) =>
             curr is SubscriptionPurchaseError ||
             curr is SubscriptionPurchaseSuccess ||
@@ -54,14 +83,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             );
           } else if (state is SubscriptionPurchaseSuccess) {
             messenger.showSnackBar(
-              const SnackBar(
-                content: Text('已升级到 Pro 会员'),
+              SnackBar(
+                content: Text(l.subUpgraded),
                 backgroundColor: AppColors.encourage,
               ),
             );
           } else if (state is SubscriptionStoreUnavailable) {
             messenger.showSnackBar(
-              const SnackBar(content: Text('当前设备不支持内购')),
+              SnackBar(content: Text(l.subUnavailableStore)),
             );
           }
         },
@@ -69,7 +98,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           if (state is SubscriptionLoading ||
               state is SubscriptionPurchasing) {
             return _LoadingState(
-              label: state is SubscriptionPurchasing ? '正在处理购买…' : null,
+              label: state is SubscriptionPurchasing ? l.subProcessing : null,
             );
           }
 
@@ -87,10 +116,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           }
 
           // SubscriptionInitial / store-unavailable with no cached status.
-          return const SizedBox.shrink();
+          return const _SkeletonState();
         },
-      ),
-    );
+      );
   }
 
   SubscriptionStatus? _statusFrom(SubscriptionState state) {
@@ -140,19 +168,20 @@ class _FreeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _Card(
           children: [
-            const _CardHeader(
+            _CardHeader(
               icon: Icons.workspace_premium_outlined,
               iconColor: AppColors.textSecondary,
-              title: '免费版',
+              title: l.subFree,
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
-              '每天 ${AppConfig.freeDailyQuota} 题',
+              l.subDailyQuota(AppConfig.freeDailyQuota),
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
@@ -160,7 +189,7 @@ class _FreeCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              '升级 Pro 解锁无限提问',
+              l.subUpgradeHint,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -172,17 +201,17 @@ class _FreeCard extends StatelessWidget {
         _Card(
           highlight: true,
           children: [
-            const _CardHeader(
+            _CardHeader(
               icon: Icons.workspace_premium,
               iconColor: AppColors.warning,
-              title: 'Pro 会员',
+              title: l.subPro,
             ),
             const SizedBox(height: AppSpacing.md),
-            const _FeatureRow(text: '无限提问，不再受每日上限'),
+            _FeatureRow(text: l.subProFeature1),
             const SizedBox(height: AppSpacing.sm),
-            const _FeatureRow(text: '更快的解题响应'),
+            _FeatureRow(text: l.subProFeature2),
             const SizedBox(height: AppSpacing.sm),
-            const _FeatureRow(text: '随时在设置中管理订阅'),
+            _FeatureRow(text: l.subProFeature3),
             if (priceLabel != null) ...[
               const SizedBox(height: AppSpacing.md),
               Text(
@@ -203,7 +232,7 @@ class _FreeCard extends StatelessWidget {
                 context.read<SubscriptionBloc>().add(const BuyRequested()),
             icon: const Icon(Icons.upgrade_rounded, size: 20),
             label: Text(
-              '升级 Pro',
+              l.subUpgradeToPro,
               style: theme.textTheme.labelLarge?.copyWith(
                 color: AppColors.textOnPrimary,
                 fontWeight: FontWeight.w600,
@@ -213,7 +242,7 @@ class _FreeCard extends StatelessWidget {
               backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.lg),
+                borderRadius: BorderRadius.circular(AppRadius.button),
               ),
             ),
           ),
@@ -224,7 +253,7 @@ class _FreeCard extends StatelessWidget {
             onPressed: () =>
                 context.read<SubscriptionBloc>().add(const RestoreRequested()),
             child: Text(
-              '恢复购买',
+              l.subRestorePurchase,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -246,6 +275,7 @@ class _PaidCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
     final expiry = status.expiresAt;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,10 +283,10 @@ class _PaidCard extends StatelessWidget {
         _Card(
           highlight: true,
           children: [
-            const _CardHeader(
+            _CardHeader(
               icon: Icons.workspace_premium,
               iconColor: AppColors.warning,
-              title: 'Pro 会员',
+              title: l.subPro,
             ),
             const SizedBox(height: AppSpacing.md),
             Row(
@@ -267,21 +297,25 @@ class _PaidCard extends StatelessWidget {
                   size: 18,
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                Text(
-                  '已开通，畅享无限提问',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Text(
+                    l.subProActive,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
             ),
             if (expiry != null) ...[
               const SizedBox(height: AppSpacing.md),
-              _InfoRow(
-                label: '有效期至',
-                value:
-                    '${expiry.year}/${_two(expiry.month)}/${_two(expiry.day)}',
+              Text(
+                l.subValidUntil(
+                    '${expiry.year}/${_two(expiry.month)}/${_two(expiry.day)}'),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ],
@@ -293,13 +327,13 @@ class _PaidCard extends StatelessWidget {
             onPressed: () =>
                 context.read<SubscriptionBloc>().add(const RestoreRequested()),
             icon: const Icon(Icons.restore_rounded, size: 18),
-            label: const Text('恢复购买'),
+            label: Text(l.subRestorePurchase),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.primary,
               side: const BorderSide(color: AppColors.primary),
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.lg),
+                borderRadius: BorderRadius.circular(AppRadius.button),
               ),
             ),
           ),
@@ -326,12 +360,13 @@ class _Card extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(
           color: highlight ? AppColors.primary : AppColors.border,
           width: highlight ? 1.5 : 1,
         ),
-        boxShadow: AppShadows.card,
+        boxShadow:
+            highlight ? AppShadows.clay(AppColors.primary) : AppShadows.soft,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -436,6 +471,7 @@ class _OfflineErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
@@ -449,7 +485,7 @@ class _OfflineErrorState extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              '暂时无法获取订阅信息',
+              l.subUnavailableTitle,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
@@ -458,7 +494,7 @@ class _OfflineErrorState extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              message.isNotEmpty ? message : '请检查网络后重试',
+              message.isNotEmpty ? message : l.subUnavailableOffline,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -468,7 +504,7 @@ class _OfflineErrorState extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('重试'),
+              label: Text(l.commonRetry),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 side: const BorderSide(color: AppColors.primary),
@@ -477,7 +513,7 @@ class _OfflineErrorState extends StatelessWidget {
                   vertical: AppSpacing.md,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderRadius: BorderRadius.circular(AppRadius.button),
                 ),
               ),
             ),
@@ -489,35 +525,113 @@ class _OfflineErrorState extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Info row helper
+// Guest view — not signed in: plan cards + sign-in CTA instead of errors
 // ---------------------------------------------------------------------------
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow({
-    required this.label,
-    required this.value,
-  });
+class _GuestView extends StatelessWidget {
+  const _GuestView();
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.base),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l.subGuestTitle,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            l.subGuestSubtitle,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _Card(
+            children: [
+              _CardHeader(
+                icon: Icons.workspace_premium_outlined,
+                iconColor: AppColors.textSecondary,
+                title: l.subFree,
               ),
-        ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                l.subDailyQuota(AppConfig.freeDailyQuota),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
               ),
-        ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.base),
+          _Card(
+            highlight: true,
+            children: [
+              _CardHeader(
+                icon: Icons.workspace_premium,
+                iconColor: AppColors.warning,
+                title: l.subPro,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _FeatureRow(text: l.subProFeature1),
+              const SizedBox(height: AppSpacing.sm),
+              _FeatureRow(text: l.subProFeature2),
+              const SizedBox(height: AppSpacing.sm),
+              _FeatureRow(text: l.subProFeature3),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => context.goNamed('login'),
+              icon: const Icon(Icons.login_rounded, size: 20),
+              label: Text(
+                l.subGuestCta,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: AppColors.textOnPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.button),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Skeleton placeholder — initial / store-unavailable without cached status
+// ---------------------------------------------------------------------------
+class _SkeletonState extends StatelessWidget {
+  const _SkeletonState();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.base),
+      children: const [
+        SkeletonBox(height: 120, radius: AppRadius.card),
+        SizedBox(height: AppSpacing.base),
+        SkeletonBox(height: 220, radius: AppRadius.card),
+        SizedBox(height: AppSpacing.lg),
+        SkeletonBox(height: 52, radius: AppRadius.button),
       ],
     );
   }

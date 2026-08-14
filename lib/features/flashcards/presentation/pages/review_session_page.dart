@@ -3,18 +3,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/widgets/app_empty_state.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/flashcard.dart';
 import '../../domain/sm2.dart';
 import '../bloc/review_bloc.dart';
 import '../bloc/review_event.dart';
 import '../bloc/review_state.dart';
 
-/// 今日复习 — the spaced-repetition review session.
+/// Today's review — the spaced-repetition review session.
 ///
 /// Route: `/flashcards/review`. Shows one due card at a time: the front
 /// (problem / prompt), tap to flip to the back (answer / explanation), then one
-/// of four rating buttons (不会 / 模糊 / 会 / 简单) drives SM-2 and advances.
-/// Covers empty and done states.
+/// of four rating buttons (again / hard / good / easy) drives SM-2 and
+/// advances. Covers empty and done states.
 class ReviewSessionPage extends StatefulWidget {
   const ReviewSessionPage({super.key});
 
@@ -31,6 +33,8 @@ class _ReviewSessionPageState extends State<ReviewSessionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -38,7 +42,7 @@ class _ReviewSessionPageState extends State<ReviewSessionPage> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          '今日复习',
+          l.reviewTitle,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
@@ -163,24 +167,25 @@ class _FlipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isBack = flipped;
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.xl),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         onTap: onTap,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(AppSpacing.xl),
           decoration: BoxDecoration(
             color: isBack ? AppColors.encourageLight : AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.xl),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(
               color: isBack
-                  ? AppColors.encourage.withAlpha(80)
+                  ? AppColors.encourage.withValues(alpha: 80 / 255)
                   : AppColors.border,
             ),
-            boxShadow: AppShadows.card,
+            boxShadow: AppShadows.soft,
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -200,7 +205,7 @@ class _FlipCard extends StatelessWidget {
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Text(
-                      isBack ? '答案' : '题目',
+                      isBack ? l.reviewAnswer : l.reviewQuestion,
                       style:
                           Theme.of(context).textTheme.labelLarge?.copyWith(
                                 color: isBack
@@ -217,13 +222,14 @@ class _FlipCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.base),
                 Text(
                   isBack
-                      ? (card.back.isEmpty ? '（无答案）' : card.back)
-                      : (card.front.isEmpty ? '（无题目）' : card.front),
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 16,
-                    height: 1.55,
-                  ),
+                      ? (card.back.isEmpty ? l.questionNoAnswer : card.back)
+                      : (card.front.isEmpty
+                          ? l.historyNoQuestionText
+                          : card.front),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppColors.textPrimary,
+                        height: 1.55,
+                      ),
                 ),
               ],
             ),
@@ -239,6 +245,7 @@ class _FlipHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       child: Row(
@@ -248,7 +255,7 @@ class _FlipHint extends StatelessWidget {
               size: 18, color: AppColors.textHint),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            '点击卡片查看答案',
+            l.reviewTapToFlip,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textHint,
                 ),
@@ -264,29 +271,30 @@ class _RatingButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    final l = AppLocalizations.of(context);
+    return Row(
       children: [
         _RatingButton(
           rating: ReviewRating.again,
-          label: '不会',
+          label: l.reviewAgain,
           color: AppColors.error,
         ),
-        SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
         _RatingButton(
           rating: ReviewRating.hard,
-          label: '模糊',
+          label: l.reviewHard,
           color: AppColors.warning,
         ),
-        SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
         _RatingButton(
           rating: ReviewRating.good,
-          label: '会',
+          label: l.reviewGood,
           color: AppColors.primary,
         ),
-        SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
         _RatingButton(
           rating: ReviewRating.easy,
-          label: '简单',
+          label: l.reviewEasy,
           color: AppColors.encourage,
         ),
       ],
@@ -314,14 +322,18 @@ class _RatingButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: color,
           foregroundColor: AppColors.textOnPrimary,
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.base - 2),
+          // 16 * 2 + label height keeps the target comfortably ≥44px.
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderRadius: BorderRadius.circular(AppRadius.button),
           ),
         ),
         child: Text(
           label,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textOnPrimary,
+              ),
         ),
       ),
     );
@@ -336,43 +348,13 @@ class _ReviewEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.check_circle_outline,
-                size: 64, color: AppColors.encourage),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              '今天没有要复习的卡片，去做几道题吧',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            FilledButton.icon(
-              onPressed: () => context.go('/camera'),
-              icon: const Icon(Icons.camera_alt_outlined, size: 18),
-              label: const Text('去拍照解题'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textOnPrimary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xl,
-                  vertical: AppSpacing.md,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    final l = AppLocalizations.of(context);
+    return AppEmptyState(
+      illustration: 'assets/illustrations/empty_review.svg',
+      title: l.reviewNoneToday,
+      ctaLabel: l.homeGoSolve,
+      onCta: () => context.go('/camera'),
+      inline: true,
     );
   }
 }
@@ -383,6 +365,7 @@ class _ReviewDone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
@@ -393,7 +376,7 @@ class _ReviewDone extends StatelessWidget {
                 size: 64, color: AppColors.encourage),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              '复习完成 🎉',
+              l.reviewDoneTitle,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
@@ -401,7 +384,7 @@ class _ReviewDone extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              '本次复习了 $reviewed 张卡片',
+              l.reviewDoneSummary(reviewed),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -410,12 +393,12 @@ class _ReviewDone extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: () => context.go('/flashcards/errorbook'),
               icon: const Icon(Icons.menu_book_outlined, size: 18),
-              label: const Text('查看错题本'),
+              label: Text(l.reviewViewErrorBook),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 side: const BorderSide(color: AppColors.primary),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderRadius: BorderRadius.circular(AppRadius.button),
                 ),
               ),
             ),
@@ -432,6 +415,7 @@ class _ReviewError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
@@ -442,7 +426,7 @@ class _ReviewError extends StatelessWidget {
                 size: 56, color: AppColors.error),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              '加载失败：$message',
+              l.commonErrorWithMessage(message),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
@@ -453,12 +437,12 @@ class _ReviewError extends StatelessWidget {
               onPressed: () =>
                   context.read<ReviewBloc>().add(const LoadDue()),
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('重试'),
+              label: Text(l.commonRetry),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 side: const BorderSide(color: AppColors.primary),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderRadius: BorderRadius.circular(AppRadius.button),
                 ),
               ),
             ),
@@ -485,15 +469,14 @@ class _SubjectChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
       ),
       child: Text(
         subject,
-        style: const TextStyle(
-          color: AppColors.primary,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }
