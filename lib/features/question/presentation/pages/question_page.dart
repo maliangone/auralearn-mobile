@@ -10,6 +10,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/widgets/tutor_markdown.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../flashcards/domain/usecases/create_flashcard_from_history_usecase.dart';
 import '../bloc/question_bloc.dart';
@@ -497,7 +498,7 @@ class _ProblemCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.border),
       ),
-      child: Text(
+      child: TutorMarkdown(
         problem.isEmpty ? l.questionNoTextRecognized : problem,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppColors.textPrimary,
@@ -582,7 +583,7 @@ class _StepTile extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
-            child: Text(
+            child: TutorMarkdown(
               content,
               style: const TextStyle(
                 color: AppColors.textPrimary,
@@ -632,7 +633,7 @@ class _ConclusionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(
+          TutorMarkdown(
             conclusion.isEmpty ? l.questionNoConclusion : conclusion,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textPrimary,

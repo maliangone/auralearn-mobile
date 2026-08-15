@@ -8,6 +8,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/llm/solve_service.dart';
 import '../../../../core/network/streaming/solve_event.dart';
 import '../../../../core/theme/tokens.dart';
+import '../../../../core/widgets/tutor_markdown.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/document.dart';
 
@@ -247,7 +248,7 @@ class _TurnView extends StatelessWidget {
               for (var i = 0; i < turn.steps.length; i++)
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                  child: Text(
+                  child: TutorMarkdown(
                     '${i + 1}. ${turn.steps[i]}',
                     style: textTheme.bodyMedium
                         ?.copyWith(color: AppColors.textPrimary),
@@ -262,7 +263,7 @@ class _TurnView extends StatelessWidget {
                     color: AppColors.encourageLight,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  child: Text(
+                  child: TutorMarkdown(
                     '${l.questionConclusion}: ${turn.conclusion}',
                     style: textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
