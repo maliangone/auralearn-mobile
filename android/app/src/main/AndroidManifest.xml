@@ -1,4 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 相机：拍摄题目照片 -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- 相册：Android 13+ 读取照片 -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <!-- 相册：Android 12L 及以下读取照片 -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
+    <!-- 网络（release 构建默认不合并 debug manifest，显式声明以防万一） -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 声明相机为非必需硬件，未声明会导致部分设备商店不可见 -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
     <application
         android:label="auralearn"
         android:name="${applicationName}"

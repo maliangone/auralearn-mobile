@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>需要访问相机，用于拍摄题目照片并进行 AI 解答。Camera access is needed to photograph your questions.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要访问相册，用于选择题目照片并进行 AI 解答。Photo library access is needed to pick question images.</string>
 </dict>
 </plist>
