@@ -120,3 +120,8 @@ coverage/
 
 # OMC operational artifacts (specs/plans/handoffs/state) — kept local, not tracked
 .omc/
+
+# Desktop platform scaffolding (mobile-only app; regenerate with `flutter create .` if ever needed)
+linux/
+macos/
+windows/
