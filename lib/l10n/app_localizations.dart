@@ -1532,6 +1532,12 @@ abstract class AppLocalizations {
   /// **'Saved'**
   String get settingsByokSaved;
 
+  /// No description provided for @settingsByokSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get settingsByokSave;
+
   /// No description provided for @settingsByokMissing.
   ///
   /// In en, this message translates to:

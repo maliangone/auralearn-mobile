@@ -24,7 +24,6 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
   final ModelConfigStore _store = getIt<ModelConfigStore>();
 
   ModelConfig _config = ModelConfig.defaults;
-  String _key = '';
   String? _savedKey;
   bool _loaded = false;
   bool _testing = false;
@@ -70,6 +69,10 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
       _model.text = preset.defaultModel;
       _reasoningEffort.clear();
     });
+    // Keys are stored per provider — refresh the "已存储" hint accordingly.
+    _store.getApiKey(preset.provider).then((k) {
+      if (mounted) setState(() => _savedKey = k);
+    });
   }
 
   ByokProviderPreset _currentPreset() {
@@ -88,12 +91,13 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
       model: _model.text.trim(),
       reasoningEffort: _reasoningEffort.text.trim(),
     );
+    final key = _apiKey.text.trim();
     setState(() => _saving = true);
     await _store.save(config);
-    if (_key.trim().isNotEmpty) {
-      await _store.saveApiKey(config.provider, _key.trim());
-      _key = '';
+    if (key.isNotEmpty) {
+      await _store.saveApiKey(config.provider, key);
       _apiKey.clear();
+      _savedKey = key;
     }
     setState(() {
       _config = config;
@@ -111,8 +115,8 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
     final l = AppLocalizations.of(context);
     final baseUrl = _baseUrl.text.trim();
     final model = _model.text.trim();
-    final key = _key.trim().isNotEmpty
-        ? _key.trim()
+    final key = _apiKey.text.trim().isNotEmpty
+        ? _apiKey.text.trim()
         : (await _store.getApiKey(_config.provider) ?? '');
 
     if (!mounted) return;
@@ -295,7 +299,7 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
                   FilledButton.icon(
                     onPressed: _saving || _testing ? null : _save,
                     icon: const Icon(Icons.save_outlined),
-                    label: Text(l.settingsByokSaved),
+                    label: Text(l.settingsByokSave),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   OutlinedButton.icon(

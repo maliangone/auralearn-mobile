@@ -786,6 +786,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsByokSaved => 'Saved';
 
   @override
+  String get settingsByokSave => 'Save';
+
+  @override
   String get settingsByokMissing =>
       'Fill in base URL, model and API key first.';
 

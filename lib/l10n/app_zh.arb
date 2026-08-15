@@ -275,6 +275,7 @@
   "settingsByokTestOk": "连接成功",
   "settingsByokTestFailed": "连接失败：{error}",
   "settingsByokSaved": "已保存",
+  "settingsByokSave": "保存",
   "settingsByokMissing": "请先填写接口地址、模型和 API key。",
 
   "@settingsByokTestFailed": {"placeholders": {"error": {"type": "String"}}},

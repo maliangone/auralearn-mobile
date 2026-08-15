@@ -764,6 +764,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsByokSaved => '已保存';
 
   @override
+  String get settingsByokSave => '保存';
+
+  @override
   String get settingsByokMissing => '请先填写接口地址、模型和 API key。';
 
   @override

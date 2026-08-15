@@ -275,6 +275,7 @@
   "settingsByokTestOk": "Connection OK",
   "settingsByokTestFailed": "Connection failed: {error}",
   "settingsByokSaved": "Saved",
+  "settingsByokSave": "Save",
   "settingsByokMissing": "Fill in base URL, model and API key first.",
 
   "@settingsByokTestFailed": {"placeholders": {"error": {"type": "String"}}},
